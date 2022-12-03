@@ -97,19 +97,22 @@ function solveLP_CBA(A::Matrix{TwofoldInterval{T}})::Result_LP_CBA{T} where {T <
         end
 
         for j = 1:n
-            wⱼᵁ = wᵁ[j]
-            wⱼᴸ = wᴸ[j]
-
             # ∑wᵢᵁ + wⱼᴸ ≥ 1
-            @constraint(model, sum(map(i -> wᵁ[i], filter(i -> i != j, 1:n))) + wⱼᴸ ≥ 1)
+            wⱼᴸ = wᴸ[j]
+            ∑wᵢᵁ = sum(map(i -> wᵁ[i], filter(i -> i != j, 1:n)))
+            @constraint(model, ∑wᵢᵁ + wⱼᴸ ≥ 1)
             # ∑wᵢᴸ + wⱼᵁ ≤ 1
-            @constraint(model, sum(map(i -> wᴸ[i], filter(i -> i != j, 1:n))) + wⱼᵁ ≤ 1)
+            wⱼᵁ = wᵁ[j]
+            ∑wᵢᴸ = sum(map(i -> wᴸ[i], filter(i -> i != j, 1:n)))
+            @constraint(model, ∑wᵢᴸ + wⱼᵁ ≤ 1)
         end
 
         # 目的関数 ∑(εᵢᴸ + εᵢᵁ)
         @objective(model, Min, sum(i -> εᴸ[i] + εᵁ[i], 1:n))
 
         optimize!(model)
+
+        # 最適値の計算
         optimalValue = sum(i -> value(εᴸ[i]) + value(εᵁ[i]), 1:n)
 
         # Tuple{Vector, Vector, ...}の形で最適値を返す
@@ -127,6 +130,7 @@ function solveLP_CBA(A::Matrix{TwofoldInterval{T}})::Result_LP_CBA{T} where {T <
             optimalValue
         )
     finally
+        # エラー終了時にも変数などを消去する
         empty!(model)
     end
 end
@@ -161,14 +165,24 @@ function updatePCM_CBA_1(
         aᵢⱼᵁ⁻ = A[i,j][1].hi
         aᵢⱼᵁ⁺ = A[i,j][2].hi
 
-        # âᵢⱼᴸ⁺ = min(aᵢⱼᴸ⁺, (wᵢᴸ⁺ - εᵢᴸ)/(wⱼᵁ⁺ + εⱼᵁ))
-        âᵢⱼᴸ⁺ = min(aᵢⱼᴸ⁺, (wᴸ⁺[i] - εᴸ[i])/(wᵁ⁺[j] + εᵁ[j]))
-        # âᵢⱼᴸ⁻ = max(aᵢⱼᴸ⁻, (wᵢᴸ⁻ + εᵢᴸ)/(wⱼᵁ⁻ - εⱼᵁ))
-        âᵢⱼᴸ⁻ = max(aᵢⱼᴸ⁻, (wᴸ⁻[i] + εᴸ[i])/(wᵁ⁻[j] - εᵁ[j]))
-        # âᵢⱼᵁ⁻ = min(aᵢⱼᵁ⁻, (wᵢᵁ⁻ - εᵢᵁ)/(wⱼᴸ⁻ + εⱼᴸ))
-        âᵢⱼᵁ⁻ = min(aᵢⱼᵁ⁻, (wᵁ⁻[i] - εᵁ[i])/(wᴸ⁻[j] + εᴸ[j]))
-        # âᵢⱼᵁ⁺ = max(aᵢⱼᴸ⁺, (wᵢᵁ⁺ + εᵢᵁ)/(wⱼᴸ⁺ - εⱼᴸ))
-        âᵢⱼᵁ⁺ = max(aᵢⱼᵁ⁺, (wᵁ⁺[i] + εᵁ[i])/(wᴸ⁺[j] - εᴸ[j]))
+        wᵢᴸ⁺ = wᴸ⁺[i]
+        wᵢᴸ⁻ = wᴸ⁻[i]
+        wᵢᵁ⁻ = wᵁ⁻[i]
+        wᵢᵁ⁺ = wᵁ⁺[i]
+        wⱼᴸ⁺ = wᴸ⁺[j]
+        wⱼᴸ⁻ = wᴸ⁻[j]
+        wⱼᵁ⁻ = wᵁ⁻[j]
+        wⱼᵁ⁺ = wᵁ⁺[j]
+
+        εᵢᴸ = εᴸ[i]
+        εᵢᵁ = εᵁ[i]
+        εⱼᴸ = εᴸ[j]
+        εⱼᵁ = εᵁ[j]
+
+        âᵢⱼᴸ⁺ = min(aᵢⱼᴸ⁺, (wᵢᴸ⁺ - εᵢᴸ)/(wⱼᵁ⁺ + εⱼᵁ))
+        âᵢⱼᴸ⁻ = max(aᵢⱼᴸ⁻, (wᵢᴸ⁻ + εᵢᴸ)/(wⱼᵁ⁻ - εⱼᵁ))
+        âᵢⱼᵁ⁻ = min(aᵢⱼᵁ⁻, (wᵢᵁ⁻ - εᵢᵁ)/(wⱼᴸ⁻ + εⱼᴸ))
+        âᵢⱼᵁ⁺ = max(aᵢⱼᵁ⁺, (wᵢᵁ⁺ + εᵢᵁ)/(wⱼᴸ⁺ - εⱼᴸ))
 
         # âᵢⱼᵁ⁺ = âᵢⱼᴸ⁺ の場合などに桁落ちで âᵢⱼᵁ⁺ < âᵢⱼᴸ⁺ となることがある
         # âᵢⱼᴸ⁺ と âᵢⱼᵁ⁺ が十分に近い値ならば âᵢⱼᴸ⁺ <- âᵢⱼᵁ⁺
@@ -217,14 +231,24 @@ function updatePCM_CBA_2(
         aᵢⱼᵁ⁻ = A[i,j][1].hi
         aᵢⱼᵁ⁺ = A[i,j][2].hi
 
-        # âᵢⱼᴸ⁺ = min(aᵢⱼᴸ⁺, wᵢᴸ⁻/wⱼᵁ, wᵢᴸ/wⱼᵁ⁻)
-        âᵢⱼᴸ⁺ = min(aᵢⱼᴸ⁺, wᴸ⁻[i]/wᵁ[j], wᴸ[i]/wᵁ⁻[j])
-        # âᵢⱼᴸ⁻ = max(aᵢⱼᴸ⁻, wᵢᴸ⁺/wⱼᵁ, wᵢᴸ/wⱼᵁ⁺)
-        âᵢⱼᴸ⁻ = max(aᵢⱼᴸ⁻, wᴸ⁺[i]/wᵁ[j], wᴸ[i]/wᵁ⁺[j])
-        # âᵢⱼᵁ⁻ = min(aᵢⱼᵁ⁻, wᵢᵁ⁺/wⱼᴸ, wᵢᵁ/wⱼᴸ⁺)
-        âᵢⱼᵁ⁻ = min(aᵢⱼᵁ⁻, wᵁ⁺[i]/wᴸ[j], wᵁ[i]/wᴸ⁺[j])
-        # âᵢⱼᵁ⁺ = max(aᵢⱼᵁ⁺, wᵢᵁ⁻/wⱼᴸ, wᵢᵁ/wⱼᴸ⁻)
-        âᵢⱼᵁ⁺ = max(aᵢⱼᵁ⁺, wᵁ⁻[i]/wᴸ[j], wᵁ[i]/wᴸ⁻[j])
+        wᵢᵁ = wᵁ[i]
+        wᵢᴸ = wᴸ[i]
+        wⱼᵁ = wᵁ[j]
+        wⱼᴸ = wᴸ[j]
+
+        wᵢᴸ⁺ = wᴸ⁺[i]
+        wᵢᴸ⁻ = wᴸ⁻[i]
+        wᵢᵁ⁻ = wᵁ⁻[i]
+        wᵢᵁ⁺ = wᵁ⁺[i]
+        wⱼᴸ⁺ = wᴸ⁺[j]
+        wⱼᴸ⁻ = wᴸ⁻[j]
+        wⱼᵁ⁻ = wᵁ⁻[j]
+        wⱼᵁ⁺ = wᵁ⁺[j]
+
+        âᵢⱼᴸ⁺ = min(aᵢⱼᴸ⁺, wᵢᴸ⁻/wⱼᵁ, wᵢᴸ/wⱼᵁ⁻)
+        âᵢⱼᴸ⁻ = max(aᵢⱼᴸ⁻, wᵢᴸ⁺/wⱼᵁ, wᵢᴸ/wⱼᵁ⁺)
+        âᵢⱼᵁ⁻ = min(aᵢⱼᵁ⁻, wᵢᵁ⁺/wⱼᴸ, wᵢᵁ/wⱼᴸ⁺)
+        âᵢⱼᵁ⁺ = max(aᵢⱼᵁ⁺, wᵢᵁ⁻/wⱼᴸ, wᵢᵁ/wⱼᴸ⁻)
 
         # âᵢⱼᵁ⁺ = âᵢⱼᴸ⁺ の場合などに桁落ちで âᵢⱼᵁ⁺ < âᵢⱼᴸ⁺ となることがある
         # âᵢⱼᴸ⁺ と âᵢⱼᵁ⁺ が十分に近い値ならば âᵢⱼᴸ⁺ <- âᵢⱼᵁ⁺

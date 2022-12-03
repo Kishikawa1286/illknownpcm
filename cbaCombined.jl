@@ -4,8 +4,6 @@ import HiGHS
 include("twofoldIntervalMatrix.jl")
 include("utils.jl")
 
-ε = 1e-10
-
 Result_LP_CBA_Combined = Tuple{
     # optimal solution
     Vector{T}, # wᵢᵁ
@@ -21,6 +19,8 @@ Result_LP_CBA_Combined = Tuple{
 # Twofold Interval PCMが引数
 function solveLP_CBA_Combined(
         A::Matrix{TwofoldInterval{T}})::Result_LP_CBA_Combined{T} where {T <: Real}
+    ε = 1e-10
+    
     if !isTwofoldIntervalPCM(A)
         throw(ArgumentError("""
             Given matrix is not valid as twofold interval matrix.
@@ -66,18 +66,22 @@ function solveLP_CBA_Combined(
                 εᵢⱼᴸ⁺ = εᴸ⁺[i,j]
                 εᵢⱼᵁ⁺ = εᵁ⁺[i,j]
 
-                @constraint(model, aᵢⱼᴸ⁺ * wⱼᵁ - εᵢⱼᴸ⁺ <= wᵢᴸ)
-                @constraint(model, wᵢᴸ <= aᵢⱼᴸ⁻ * wⱼᵁ + εᵢⱼᴸ⁻)
-                @constraint(model, aᵢⱼᵁ⁻ * wⱼᴸ - εᵢⱼᵁ⁻ <= wᵢᵁ)
-                @constraint(model, wᵢᵁ <= aᵢⱼᵁ⁺ * wⱼᴸ + εᵢⱼᵁ⁺)
+                @constraint(model, aᵢⱼᴸ⁺ * wⱼᵁ - εᵢⱼᴸ⁺ ≤ wᵢᴸ)
+                @constraint(model, wᵢᴸ ≤ aᵢⱼᴸ⁻ * wⱼᵁ + εᵢⱼᴸ⁻)
+                @constraint(model, aᵢⱼᵁ⁻ * wⱼᴸ - εᵢⱼᵁ⁻ ≤ wᵢᵁ)
+                @constraint(model, wᵢᵁ ≤ aᵢⱼᵁ⁺ * wⱼᴸ + εᵢⱼᵁ⁺)
             end
         end
 
         for j = 1:n
             # ∑wᵢᵁ + wⱼᴸ ≥ 1
-            @constraint(model, sum(map(i -> wᵁ[i], filter(i -> i != j, 1:n))) + wᴸ[j] >= 1)
+            wⱼᴸ = wᴸ[j]
+            ∑wᵢᵁ = sum(map(i -> wᵁ[i], filter(i -> i != j, 1:n)))
+            @constraint(model, ∑wᵢᵁ + wⱼᴸ ≥ 1)
             # ∑wᵢᴸ + wⱼᵁ ≤ 1
-            @constraint(model, sum(map(i -> wᴸ[i], filter(i -> i != j, 1:n))) + wᵁ[j] <= 1)
+            wⱼᵁ = wᵁ[j]
+            ∑wᵢᴸ = sum(map(i -> wᴸ[i], filter(i -> i != j, 1:n)))
+            @constraint(model, ∑wᵢᴸ + wⱼᵁ ≤ 1)
         end
 
         # 目的関数 ∑(εᵢᴸ + εᵢᵁ)
@@ -120,6 +124,7 @@ function solveLP_CBA_Combined(
             optimalValue
         )
     finally
+        # エラー終了時にも変数などを消去する
         empty!(model)
     end
 end
@@ -173,10 +178,23 @@ function updatePCM_CBA_Combined(
             εⱼᵢᴸ⁺ = εᴸ⁺[j,i]
             εⱼᵢᵁ⁺ = εᵁ⁺[j,i]
 
-            âᵢⱼᴸ⁺ = min(aᵢⱼᴸ⁺ - εᵢⱼᴸ⁺/wⱼᵁ, (aⱼᵢᵁ⁺ + εⱼᵢᵁ⁺/wᵢᴸ)^(-1))
-            âᵢⱼᴸ⁻ = max(aᵢⱼᴸ⁻ + εᵢⱼᴸ⁻/wⱼᵁ, (aⱼᵢᵁ⁻ - εⱼᵢᵁ⁻/wᵢᴸ)^(-1))
-            âᵢⱼᵁ⁻ = min(aᵢⱼᵁ⁻ - εᵢⱼᵁ⁻/wⱼᴸ, (aⱼᵢᴸ⁻ + εⱼᵢᴸ⁻/wᵢᵁ)^(-1))
-            âᵢⱼᵁ⁺ = max(aᵢⱼᵁ⁺ + εᵢⱼᵁ⁺/wⱼᴸ, (aⱼᵢᴸ⁺ - εⱼᵢᴸ⁺/wᵢᵁ)^(-1))
+            # ここの式は cba.test.ipynb を参照
+            âᵢⱼᴸ⁺ = min(
+                 (aᵢⱼᴸ⁺*wⱼᵁ - εᵢⱼᴸ⁺ - minimum(map(k -> εᴸ⁻[i,k], filter(k -> k != i, 1:n))))/wⱼᵁ,
+                ((aⱼᵢᵁ⁺*wᵢᴸ + εⱼᵢᵁ⁺ + maximum(map(k -> εᵁ⁻[k,i], filter(k -> k != i, 1:n))))/wᵢᴸ)^(-1)
+            )
+            âᵢⱼᴸ⁻ = max(
+                 (aᵢⱼᴸ⁻*wⱼᵁ + εᵢⱼᴸ⁻ + maximum(map(k -> εᴸ⁺[i,k], filter(k -> k != i, 1:n))))/wⱼᵁ,
+                ((aⱼᵢᵁ⁻*wᵢᴸ - εⱼᵢᵁ⁻ - minimum(map(k -> εᵁ⁺[k,i], filter(k -> k != i, 1:n))))/wᵢᴸ)^(-1)
+            )
+            âᵢⱼᵁ⁻ = min(
+                 (aᵢⱼᵁ⁻*wⱼᴸ - εᵢⱼᵁ⁻ - minimum(map(k -> εᵁ⁺[i,k], filter(k -> k != i, 1:n))))/wⱼᴸ,
+                ((aⱼᵢᴸ⁻*wᵢᵁ + εⱼᵢᴸ⁻ + maximum(map(k -> εᴸ⁺[k,i], filter(k -> k != i, 1:n))))/wᵢᵁ)^(-1)
+            )
+            âᵢⱼᵁ⁺ = max(
+                 (aᵢⱼᵁ⁺*wⱼᴸ + εᵢⱼᵁ⁺ + maximum(map(k -> εᵁ⁻[i,k], filter(k -> k != i, 1:n))))/wⱼᴸ,
+                ((aⱼᵢᴸ⁺*wᵢᵁ - εⱼᵢᴸ⁺ - minimum(map(k -> εᴸ⁻[k,i], filter(k -> k != i, 1:n))))/wᵢᵁ)^(-1)
+            )
 
             # âᵢⱼᵁ⁺ = âᵢⱼᴸ⁺ の場合などに桁落ちで âᵢⱼᵁ⁺ < âᵢⱼᴸ⁺ となることがある
             # âᵢⱼᴸ⁺ と âᵢⱼᵁ⁺ が十分に近い値ならば âᵢⱼᴸ⁺ <- âᵢⱼᵁ⁺
@@ -189,6 +207,38 @@ function updatePCM_CBA_Combined(
                 Â[i, j] = (emptyinterval(), âᵢⱼᴸ⁺..âᵢⱼᵁ⁺)
             else
                 Â[i, j] = (âᵢⱼᴸ⁻..âᵢⱼᵁ⁻, âᵢⱼᴸ⁺..âᵢⱼᵁ⁺)
+            end
+        end
+    end
+    
+    for i = 1:n, j = 1:n, k = 1:n
+        if i == j || i == k || j == k
+            continue
+        end
+        wᵢᵁ = wᵁ[i]
+        wᵢᴸ = wᴸ[i]
+        wⱼᵁ = wᵁ[j]
+        wⱼᴸ = wᴸ[j]
+        wₖᵁ = wᵁ[k]
+        wₖᴸ = wᴸ[k]
+        aᵢⱼᴸ⁺ = A[i,j][2].lo
+        aᵢⱼᴸ⁻ = A[i,j][1].lo
+        aᵢⱼᵁ⁻ = A[i,j][1].hi
+        aᵢⱼᵁ⁺ = A[i,j][2].hi
+        aᵢₖᴸ⁺ = A[i,k][2].lo
+        aᵢₖᴸ⁻ = A[i,k][1].lo
+        aᵢₖᵁ⁻ = A[i,k][1].hi
+        aᵢₖᵁ⁺ = A[i,k][2].hi
+
+        # aᵢₖᴸ⁻ * wₖᵁ ≤ wᵢᴸ などの満たすべき制約を満たさない場合にアラート
+        if aᵢₖᴸ⁻ * wₖᵁ < aᵢⱼᴸ⁺ * wⱼᵁ
+            if !((nearlyEqual(aᵢₖᴸ⁻ * wₖᵁ, wᵢᴸ) || aᵢₖᴸ⁻ * wₖᵁ <= wᵢᴸ) && (nearlyEqual(aᵢⱼᴸ⁺ * wⱼᵁ, wᵢᴸ) || wᵢᴸ <= aᵢⱼᴸ⁺ * wⱼᵁ))
+                display("i=$(i), j=$(j), k=$(k), aᵢₖᴸ⁻ * wₖᵁ = $(aᵢₖᴸ⁻ * wₖᵁ), wᵢᴸ=$(wᵢᴸ), aᵢⱼᴸ⁺ * wⱼᵁ=$(aᵢⱼᴸ⁺ * wⱼᵁ)")
+            end
+        end
+        if aᵢₖᵁ⁺ * wₖᴸ < aᵢⱼᵁ⁻ * wⱼᴸ
+            if !((nearlyEqual(aᵢₖᵁ⁺ * wₖᴸ, wᵢᵁ) || aᵢₖᵁ⁺ * wₖᴸ <= wᵢᵁ) && (nearlyEqual(aᵢⱼᵁ⁻ * wⱼᴸ, wᵢᵁ) || wᵢᵁ <= aᵢⱼᵁ⁻ * wⱼᴸ))
+                display("i=$(i), j=$(j), k=$(k), aᵢₖᵁ⁺ * wₖᴸ=$(aᵢₖᵁ⁺ * wₖᴸ), wᵢᵁ=$(wᵢᵁ), aᵢⱼᵁ⁻ * wⱼᴸ=$(aᵢⱼᵁ⁻ * wⱼᴸ)")
             end
         end
     end

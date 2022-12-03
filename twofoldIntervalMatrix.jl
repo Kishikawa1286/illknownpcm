@@ -17,25 +17,6 @@ TwofoldInterval = Tuple{Interval{T}, Interval{T}} where {T <: Real}
     end
 
     for i = 1:n, j = 1:n
-        # 内が∅の場合
-        if !iscommon(A[i,j][1])
-            return false
-#             aᵢⱼᴸ⁺ = A[i,j][2].lo
-#             aᵢⱼᵁ⁺ = A[i,j][2].hi
-            
-#             # aᵢⱼᴸ⁺ ≤ aᵢⱼᵁ⁺ を満たさない
-#             if aᵢⱼᴸ⁺ > aᵢⱼᵁ⁺
-#                 return false
-#             end
-
-#             # 対称成分の内が∅でない
-#             if iscommon(A[j,i][1])
-#                 return false
-#             end
-
-#             continue
-        end
-
         aᵢⱼᴸ⁺ = A[i,j][2].lo
         aᵢⱼᴸ⁻ = A[i,j][1].lo
         aᵢⱼᵁ⁻ = A[i,j][1].hi
