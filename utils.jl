@@ -13,3 +13,11 @@ end
     end
     return false
 end
+
+@inline function nearlyEqualLoose(a::Number, b::Number)
+    if abs(a - b) < 1e-3
+        return true
+    end
+    return false
+end
+

@@ -32,7 +32,7 @@ function solveLP_CBA_Combined(
     try
         # 変数の定義
         @variable(model, wᵁ[i=1:n] >= ε) # wᵢᵁ ≥ ε
-        @variable(model, wᴸ[i=1:n] >= ε) # wᵢᴸ ≥ ε
+        @variable(model, wᴸ[i=1:n] >= ε) # twᵢᴸ ≥ ε
         # Matrixに入れるのでLPには存在しないi==jの変数も定義する
         # 目的関数を最小化する影響でこれらは0になる
         @variable(model, εᴸ⁻[i=1:n,j=1:n] >= 0) # εᵢⱼᴸ⁻ ≥ 0
@@ -231,13 +231,13 @@ function updatePCM_CBA_Combined(
         aᵢₖᵁ⁺ = A[i,k][2].hi
 
         # aᵢₖᴸ⁻ * wₖᵁ ≤ wᵢᴸ などの満たすべき制約を満たさない場合にアラート
-        if aᵢₖᴸ⁻ * wₖᵁ < aᵢⱼᴸ⁺ * wⱼᵁ
-            if !((nearlyEqual(aᵢₖᴸ⁻ * wₖᵁ, wᵢᴸ) || aᵢₖᴸ⁻ * wₖᵁ <= wᵢᴸ) && (nearlyEqual(aᵢⱼᴸ⁺ * wⱼᵁ, wᵢᴸ) || wᵢᴸ <= aᵢⱼᴸ⁺ * wⱼᵁ))
+        if aᵢₖᴸ⁻ * wₖᵁ < aᵢⱼᴸ⁺ * wⱼᵁ && !nearlyEqualLoose(aᵢₖᴸ⁻ * wₖᵁ, aᵢⱼᴸ⁺ * wⱼᵁ)
+            if !((nearlyEqualLoose(aᵢₖᴸ⁻ * wₖᵁ, wᵢᴸ) || aᵢₖᴸ⁻ * wₖᵁ <= wᵢᴸ) && (nearlyEqualLoose(aᵢⱼᴸ⁺ * wⱼᵁ, wᵢᴸ) || wᵢᴸ <= aᵢⱼᴸ⁺ * wⱼᵁ))
                 display("i=$(i), j=$(j), k=$(k), aᵢₖᴸ⁻ * wₖᵁ = $(aᵢₖᴸ⁻ * wₖᵁ), wᵢᴸ=$(wᵢᴸ), aᵢⱼᴸ⁺ * wⱼᵁ=$(aᵢⱼᴸ⁺ * wⱼᵁ)")
             end
         end
-        if aᵢₖᵁ⁺ * wₖᴸ < aᵢⱼᵁ⁻ * wⱼᴸ
-            if !((nearlyEqual(aᵢₖᵁ⁺ * wₖᴸ, wᵢᵁ) || aᵢₖᵁ⁺ * wₖᴸ <= wᵢᵁ) && (nearlyEqual(aᵢⱼᵁ⁻ * wⱼᴸ, wᵢᵁ) || wᵢᵁ <= aᵢⱼᵁ⁻ * wⱼᴸ))
+        if aᵢₖᵁ⁺ * wₖᴸ < aᵢⱼᵁ⁻ * wⱼᴸ && !nearlyEqualLoose(aᵢₖᵁ⁺ * wₖᴸ, aᵢⱼᵁ⁻ * wⱼᴸ)
+            if !((nearlyEqualLoose(aᵢₖᵁ⁺ * wₖᴸ, wᵢᵁ) || aᵢₖᵁ⁺ * wₖᴸ <= wᵢᵁ) && (nearlyEqualLoose(aᵢⱼᵁ⁻ * wⱼᴸ, wᵢᵁ) || wᵢᵁ <= aᵢⱼᵁ⁻ * wⱼᴸ))
                 display("i=$(i), j=$(j), k=$(k), aᵢₖᵁ⁺ * wₖᴸ=$(aᵢₖᵁ⁺ * wₖᴸ), wᵢᵁ=$(wᵢᵁ), aᵢⱼᵁ⁻ * wⱼᴸ=$(aᵢⱼᵁ⁻ * wⱼᴸ)")
             end
         end
