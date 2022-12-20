@@ -15,6 +15,7 @@ function intervalVectorLaTeXString(
     Wₛₜᵣ = fill("", n)
     for i = 1:n
         # (i,j)成分の両端
+        # 少数第4位で四捨五入
         wᵢᴸ = string(round(W[i].lo, digits=3))
         wᵢᵁ = string(round(W[i].hi, digits=3))
         Wₛₜᵣ[i] = "\\left[ $(wᵢᴸ), $(wᵢᵁ) \\right]"
@@ -23,6 +24,7 @@ function intervalVectorLaTeXString(
     str = "\\begin{bmatrix} "
     for i = 1:n
         str = str * "$(Wₛₜᵣ[i])"
+        # 改行
         if i != n
             str = str * " \\\\ "
         end
@@ -45,6 +47,7 @@ function intervalMatrixLaTeXString(
     Aₛₜᵣ = fill("", m, n)
     for i = 1:m, j = 1:n
         # (i,j)成分の両端
+        # 少数第4位で四捨五入
         aᵢⱼᴸ = string(round(A[i,j].lo, digits=3))
         aᵢⱼᵁ = string(round(A[i,j].hi, digits=3))
         Aₛₜᵣ[i,j] = "\\left[ $(aᵢⱼᴸ), $(aᵢⱼᵁ) \\right]"
@@ -54,6 +57,7 @@ function intervalMatrixLaTeXString(
     for i = 1:m, j = 1:n
         str = str * "$(Aₛₜᵣ[i,j])"
         if j == n
+            # 行末尾で改行
             if i != m
                 str = str * " \\\\ "
             end

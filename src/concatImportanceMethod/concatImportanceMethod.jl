@@ -80,6 +80,8 @@ function solveConcatImportanceMethodApproximationLP(
     end
 end
 
+# TODO: k ごとに分けて計算する
+
 ConcatImportanceMethodTBoundaries = @NamedTuple{
     tᴸ⁻::Vector{T}, tᵁ⁻::Vector{T}, tᴸ⁺::Vector{T}, tᵁ⁺::Vector{T},
     } where {T <: Real}
