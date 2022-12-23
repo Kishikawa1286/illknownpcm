@@ -6,15 +6,81 @@ include("../nearlyEqual/nearlyEqual.jl")
 include("../twofoldInterval/twofoldInterval.jl")
 include("../twofoldIntervalPCM/twofoldIntervalPCM.jl")
 
-ConcatImportanceMethodApproximationLPResult = @NamedTuple{
+function solveConcatImportanceMethodFeasibilityCheckLP(
+        Aₖ::Matrix{Interval{T}})::T where {T <: Real}
+    ε = 1e-8
+
+    if !isIntervalPCM(Aₖ)
+        throw(ArgumentError("Given matrix is not valid as interval matrix."))
+    end
+
+    m, n = size(Aₖ)
+    model = Model(HiGHS.Optimizer)
+    set_silent(model)
+
+    try
+        # wₖᵢᴸ⁻ ≥ ε, wₖᵢᵁ⁻ ≥ ε
+        @variable(model, wₖᴸ⁻[i=1:n] ≥ ε); @variable(model, wₖᵁ⁻[i=1:n] ≥ ε)
+        # wₖᵢᴸ⁺ ≥ ε, wₖᵢᵁ⁺ ≥ ε
+        @variable(model, wₖᴸ⁺[i=1:n] ≥ ε); @variable(model, wₖᵁ⁺[i=1:n] ≥ ε)
+        # δₖᵢᴸ ≥ 0, δₖᵢᵁ ≥ 0
+        @variable(model, δₖᴸ[i=1:n] ≥ 0); @variable(model, δₖᵁ[i=1:n] ≥ 0)
+
+        for i = 1:n
+            wₖᵢᴸ⁻ = wₖᴸ⁻[i]; wₖᵢᵁ⁻ = wₖᵁ⁻[i]; wₖᵢᴸ⁺ = wₖᴸ⁺[i]; wₖᵢᵁ⁺ = wₖᵁ⁺[i]
+            δₖᵢᴸ = δₖᴸ[i]; δₖᵢᵁ = δₖᵁ[i]
+
+            @constraint(model, wₖᵢᵁ⁺ ≥ wₖᵢᵁ⁻)
+            @constraint(model, wₖᵢᵁ⁻ ≥ wₖᵢᴸ⁻)
+            @constraint(model, wₖᵢᴸ⁻ ≥ wₖᵢᴸ⁺)
+
+            # 正規性条件
+            ∑wₖⱼᴸ⁻ = sum(map(j -> wₖᴸ⁻[j], filter(j -> i != j, 1:n)))
+            @constraint(model, ∑wₖⱼᴸ⁻ + wₖᵢᵁ⁻ ≤ 1)
+            ∑wₖⱼᵁ⁻ = sum(map(j -> wₖᵁ⁻[j], filter(j -> i != j, 1:n)))
+            @constraint(model, ∑wₖⱼᵁ⁻ + wₖᵢᴸ⁻ ≥ 1)
+            ∑wₖⱼᴸ⁺ = sum(map(j -> wₖᴸ⁺[j], filter(j -> i != j, 1:n)))
+            @constraint(model, ∑wₖⱼᴸ⁺ + wₖᵢᵁ⁺ ≤ 1)
+            ∑wₖⱼᵁ⁺ = sum(map(j -> wₖᵁ⁺[j], filter(j -> i != j, 1:n)))
+            @constraint(model, ∑wₖⱼᵁ⁺ + wₖᵢᴸ⁺ ≥ 1)
+
+            for j = 1:n
+                aₖᵢⱼᴸ = Aₖ[i,j].lo; aₖᵢⱼᵁ = Aₖ[i,j].hi
+                wₖⱼᴸ⁻ = wₖᴸ⁻[j]; wₖⱼᵁ⁻ = wₖᵁ⁻[j]; wₖⱼᴸ⁺ = wₖᴸ⁺[j]; wₖⱼᵁ⁺ = wₖᵁ⁺[j]
+
+                @constraint(model, wₖᵢᴸ⁺ ≤ aₖᵢⱼᴸ * wₖⱼᵁ⁺)
+                @constraint(model, wₖᵢᴸ⁻ ≥ aₖᵢⱼᴸ * wₖⱼᵁ⁻ - δₖᵢᴸ)
+                @constraint(model, wₖᵢᵁ⁻ ≤ aₖᵢⱼᵁ * wₖⱼᴸ⁻ + δₖᵢᵁ)
+                @constraint(model, wₖᵢᵁ⁺ ≥ aₖᵢⱼᵁ * wₖⱼᴸ⁺)
+            end
+        end
+        # 中心総和 = 1
+        @constraint(model, sum(wₖᴸ⁻) + sum(wₖᵁ⁻) == 2)
+        @constraint(model, sum(wₖᴸ⁺) + sum(wₖᵁ⁺) == 2)
+
+        # 目的関数 ∑(δₖᵢᴸ + δₖᵢᵁ)
+        @objective(model, Min, sum(δₖᴸ) + sum(δₖᵁ))
+
+        optimize!(model)
+
+        optimalValue = sum(value.(δₖᴸ)) + sum(value.(δₖᵁ))
+
+        return optimalValue
+    finally
+        # エラー終了時にも変数などを消去する
+        empty!(model)
+    end
+end
+
+ConcatImportanceMethodBothApproximationLPResult = @NamedTuple{
     wₖᴸ⁻::Vector{T}, wₖᵁ⁻::Vector{T},
     wₖᴸ⁺::Vector{T}, wₖᵁ⁺::Vector{T},
     optimalValue::T
     } where {T <: Real}
 
-function solveConcatImportanceMethodApproximationLP(
+function solveConcatImportanceMethodBothApproximationLP(
         Aₖ::Matrix{Interval{T}}
-        )::ConcatImportanceMethodApproximationLPResult{T} where {T <: Real}
+        )::ConcatImportanceMethodBothApproximationLPResult{T} where {T <: Real}
     ε = 1e-8
 
     if !isIntervalPCM(Aₖ)
@@ -85,7 +151,7 @@ ConcatImportanceMethodTBoundaries = @NamedTuple{
     } where {T <: Real}
 
 function calculateConcatImportanceMethodTBoundaries(
-        lpResult::ConcatImportanceMethodApproximationLPResult{T}
+        lpResult::ConcatImportanceMethodBothApproximationLPResult{T}
         )::ConcatImportanceMethodTBoundaries{T} where {T <: Real}
     wₖᴸ⁻ = lpResult.wₖᴸ⁻; wₖᵁ⁻ = lpResult.wₖᵁ⁻
     wₖᴸ⁺ = lpResult.wₖᴸ⁺; wₖᵁ⁺ = lpResult.wₖᵁ⁺
@@ -110,7 +176,7 @@ ConcatImportanceMethodConcatLPResult = @NamedTuple{
     } where {T <: Real}
 
 function solveConcatImportanceMethodConcatLP(
-        lpResults::AbstractArray{ConcatImportanceMethodApproximationLPResult{T}, 1},
+        lpResults::AbstractArray{ConcatImportanceMethodBothApproximationLPResult{T}, 1},
         tBoundaries::AbstractArray{ConcatImportanceMethodTBoundaries{T}, 1}
         )::ConcatImportanceMethodConcatLPResult{T} where {T <: Real}
     ε = 1e-8

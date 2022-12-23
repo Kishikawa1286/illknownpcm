@@ -2,14 +2,14 @@ using LaTeXStrings
 
 include("../concatImportanceMethod/concatImportanceMethod.jl")
 
-ConcatImportanceMethodApproximationLPResultLaTeXString = @NamedTuple{
+ConcatImportanceMethodBothApproximationLPResultLaTeXString = @NamedTuple{
     wₖᴸ⁻::String, wₖᵁ⁻::String,
     wₖᴸ⁺::String, wₖᵁ⁺::String
     }
 
-function concatImportanceMethodApproximationLPResultLaTeXString(
-        result::ConcatImportanceMethodApproximationLPResult{T}
-        )::ConcatImportanceMethodApproximationLPResultLaTeXString where {T <: Real}
+function concatImportanceMethodBothApproximationLPResultLaTeXString(
+        result::ConcatImportanceMethodBothApproximationLPResult{T}
+        )::ConcatImportanceMethodBothApproximationLPResultLaTeXString where {T <: Real}
     n = length(result.wₖᴸ⁻)
 
     wₖᴸ⁻ = "\\begin{bmatrix}"; wₖᵁ⁻ = "\\begin{bmatrix}"
@@ -30,11 +30,11 @@ function concatImportanceMethodApproximationLPResultLaTeXString(
     return (wₖᴸ⁻=wₖᴸ⁻, wₖᵁ⁻=wₖᵁ⁻, wₖᴸ⁺=wₖᴸ⁺, wₖᵁ⁺=wₖᵁ⁺)
 end
 
-function displayConcatImportanceMethodApproximationLPResults(
-        results::AbstractArray{ConcatImportanceMethodApproximationLPResult{T}}
+function displayConcatImportanceMethodBothApproximationLPResults(
+        results::AbstractArray{ConcatImportanceMethodBothApproximationLPResult{T}}
         ) where {T <: Real}
     for k = eachindex(results)
-        resultₛₜᵣ = concatImportanceMethodApproximationLPResultLaTeXString(results[k])
+        resultₛₜᵣ = concatImportanceMethodBothApproximationLPResultLaTeXString(results[k])
 
         display(L"""
             w_{%$(k)}^{\text{L}-} = %$(resultₛₜᵣ.wₖᴸ⁻), ~~
