@@ -1,6 +1,6 @@
 """
 precision loss の修正を行う  
-`abs(a - b)` が 1×10⁸ より小さければ b を返す  
+`abs(a - b)` が 1×10⁻⁸ より小さければ b を返す  
 そうでなければ a を返す
 """
 @inline function correctPrecisionLoss(a, b)
@@ -9,7 +9,7 @@ precision loss の修正を行う
 end
 
 """
-`abs(a - b)` が 1×10⁸ より小さいか
+`abs(a - b)` が 1×10⁻⁸ より小さいか
 """
 @inline function nearlyEqual(a::Number, b::Number)
     if abs(a - b) < 1e-8 return true end
@@ -17,7 +17,7 @@ end
 end
 
 """
-`abs(a - b)` が 1×10³ より小さいか
+`abs(a - b)` が 1×10⁻³ より小さいか
 """
 @inline function nearlyEqualLoose(a::Number, b::Number)
     if abs(a - b) < 1e-3 return true end
