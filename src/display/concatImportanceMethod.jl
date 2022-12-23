@@ -46,44 +46,42 @@ function displayConcatImportanceMethodApproximationLPResults(
 end
 
 ConcatImportanceMethodTBoundariesLaTeXString = @NamedTuple{
-    tᴸ⁻::String, tᵁ⁻::String, tᴸ⁺::String, tᵁ⁺::String
+    tₖᴸ⁻::String, tₖᵁ⁻::String, tₖᴸ⁺::String, tₖᵁ⁺::String
     }
 
 function concatImportanceMethodTBoundariesLaTeXString(
         boundaries::ConcatImportanceMethodTBoundaries{T}
-        )::AbstractArray{ConcatImportanceMethodTBoundariesLaTeXString} where {T <: Real}
-    m = length(boundaries.tᴸ⁻)
+        )::ConcatImportanceMethodTBoundariesLaTeXString where {T <: Real}
+    tₖᴸ⁻ = string(round(boundaries.tₖᴸ⁻, digits=3))
+    tₖᵁ⁻ = string(round(boundaries.tₖᵁ⁻, digits=3))
+    tₖᴸ⁺ = string(round(boundaries.tₖᴸ⁺, digits=3))
+    tₖᵁ⁺ = string(round(boundaries.tₖᵁ⁺, digits=3))
 
-    boundariesₛₜᵣ = fill((tᴸ⁻="", tᵁ⁻="", tᴸ⁺="", tᵁ⁺=""), m)
-
-    for k = 1:m
-        tᴸ⁻=""; tᵁ⁻=""; tᴸ⁺=""; tᵁ⁺=""
-        tᴸ⁻ *= " $(string(round(boundaries.tᴸ⁻[k], digits=3))) "
-        tᵁ⁻ *= " $(string(round(boundaries.tᵁ⁻[k], digits=3))) "
-        tᴸ⁺ *= " $(string(round(boundaries.tᴸ⁺[k], digits=3))) "
-        tᵁ⁺ *= " $(string(round(boundaries.tᵁ⁺[k], digits=3))) "
-        boundariesₛₜᵣ[k] = (tᴸ⁻=tᴸ⁻, tᵁ⁻=tᵁ⁻, tᴸ⁺=tᴸ⁺, tᵁ⁺=tᵁ⁺)
-    end
-
-    return boundariesₛₜᵣ
+    return (tₖᴸ⁻=tₖᴸ⁻, tₖᵁ⁻=tₖᵁ⁻, tₖᴸ⁺=tₖᴸ⁺, tₖᵁ⁺=tₖᵁ⁺)
 end
 
 function displayConcatImportanceMethodTBoundaries(
-        boundaries::ConcatImportanceMethodTBoundaries{T}) where {T <: Real}
+        boundaries::ConcatImportanceMethodTBoundaries{T},
+        k::Integer) where {T <: Real}
     boundariesₛₜᵣ = concatImportanceMethodTBoundariesLaTeXString(boundaries)
 
-    for k = eachindex(boundariesₛₜᵣ)
-        tₖᴸ⁻ = boundariesₛₜᵣ[k].tᴸ⁻
-        tₖᵁ⁻ = boundariesₛₜᵣ[k].tᵁ⁻
-        tₖᴸ⁺ = boundariesₛₜᵣ[k].tᴸ⁺
-        tₖᵁ⁺ = boundariesₛₜᵣ[k].tᵁ⁺
+    tₖᴸ⁻ = boundariesₛₜᵣ.tₖᴸ⁻
+    tₖᵁ⁻ = boundariesₛₜᵣ.tₖᵁ⁻
+    tₖᴸ⁺ = boundariesₛₜᵣ.tₖᴸ⁺
+    tₖᵁ⁺ = boundariesₛₜᵣ.tₖᵁ⁺
 
-        display(L"""
-            t_{%$(k)}^{\text{L}-} = %$(tₖᴸ⁻), ~~
-            t_{%$(k)}^{\text{U}-} = %$(tₖᵁ⁻), ~~
-            t_{%$(k)}^{\text{L}+} = %$(tₖᴸ⁺), ~~
-            t_{%$(k)}^{\text{U}+} = %$(tₖᵁ⁺)
-        """)
+    display(L"""
+        t_{%$(k)}^{\text{L}-} = %$(tₖᴸ⁻), ~~
+        t_{%$(k)}^{\text{U}-} = %$(tₖᵁ⁻), ~~
+        t_{%$(k)}^{\text{L}+} = %$(tₖᴸ⁺), ~~
+        t_{%$(k)}^{\text{U}+} = %$(tₖᵁ⁺)
+    """)
+end
+
+function displayConcatImportanceMethodTBoundaries(
+        boundaries::AbstractArray{ConcatImportanceMethodTBoundaries{T}}) where {T <: Real}
+    for k = eachindex(boundaries)
+        displayConcatImportanceMethodTBoundaries(boundaries[k], k)
     end
 end
 

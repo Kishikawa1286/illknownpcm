@@ -80,36 +80,24 @@ function solveConcatImportanceMethodApproximationLP(
     end
 end
 
-# TODO: k ごとに分けて計算する
-
 ConcatImportanceMethodTBoundaries = @NamedTuple{
-    tᴸ⁻::Vector{T}, tᵁ⁻::Vector{T}, tᴸ⁺::Vector{T}, tᵁ⁺::Vector{T},
+    tₖᴸ⁻::T, tₖᵁ⁻::T, tₖᴸ⁺::T, tₖᵁ⁺::T,
     } where {T <: Real}
 
 function calculateConcatImportanceMethodTBoundaries(
-        lpResults::AbstractArray{ConcatImportanceMethodApproximationLPResult{T}, 1}
+        lpResult::ConcatImportanceMethodApproximationLPResult{T}
         )::ConcatImportanceMethodTBoundaries{T} where {T <: Real}
-    m = length(lpResults)
+    wₖᴸ⁻ = lpResult.wₖᴸ⁻; wₖᵁ⁻ = lpResult.wₖᵁ⁻
+    wₖᴸ⁺ = lpResult.wₖᴸ⁺; wₖᵁ⁺ = lpResult.wₖᵁ⁺
 
-    tᴸ⁻ = fill(0.0, m)
-    tᵁ⁻ = fill(0.0, m)
-    tᴸ⁺ = fill(0.0, m)
-    tᵁ⁺ = fill(0.0, m)
+    n = length(wₖᴸ⁻)
 
-    for k = 1:m
-        lpResult = lpResults[k]
-        wₖᴸ⁻ = lpResult.wₖᴸ⁻; wₖᵁ⁻ = lpResult.wₖᵁ⁻
-        wₖᴸ⁺ = lpResult.wₖᴸ⁺; wₖᵁ⁺ = lpResult.wₖᵁ⁺
+    tₖᴸ⁻ = 1 / minimum(i -> sum(map(j -> wₖᵁ⁻[j], filter(j -> i != j, 1:n))) + wₖᴸ⁻[i], 1:n)
+    tₖᵁ⁻ = 1 / maximum(i -> sum(map(j -> wₖᴸ⁻[j], filter(j -> i != j, 1:n))) + wₖᵁ⁻[i], 1:n)
+    tₖᴸ⁺ = 1 / minimum(i -> sum(map(j -> wₖᵁ⁺[j], filter(j -> i != j, 1:n))) + wₖᴸ⁺[i], 1:n)
+    tₖᵁ⁺ = 1 / maximum(i -> sum(map(j -> wₖᴸ⁺[j], filter(j -> i != j, 1:n))) + wₖᵁ⁺[i], 1:n)
 
-        n = length(wₖᴸ⁻)
-
-        tᴸ⁻[k] = 1 / minimum(i -> sum(map(j -> wₖᵁ⁻[j], filter(j -> i != j, 1:n))) + wₖᴸ⁻[i], 1:n)
-        tᵁ⁻[k] = 1 / maximum(i -> sum(map(j -> wₖᴸ⁻[j], filter(j -> i != j, 1:n))) + wₖᵁ⁻[i], 1:n)
-        tᴸ⁺[k] = 1 / minimum(i -> sum(map(j -> wₖᵁ⁺[j], filter(j -> i != j, 1:n))) + wₖᴸ⁺[i], 1:n)
-        tᵁ⁺[k] = 1 / maximum(i -> sum(map(j -> wₖᴸ⁺[j], filter(j -> i != j, 1:n))) + wₖᵁ⁺[i], 1:n)
-    end
-
-    return (tᴸ⁻=tᴸ⁻, tᵁ⁻=tᵁ⁻, tᴸ⁺=tᴸ⁺, tᵁ⁺=tᵁ⁺)
+    return (tₖᴸ⁻=tₖᴸ⁻, tₖᵁ⁻=tₖᵁ⁻, tₖᴸ⁺=tₖᴸ⁺, tₖᵁ⁺=tₖᵁ⁺)
 end
 
 ConcatImportanceMethodConcatLPResult = @NamedTuple{
@@ -123,7 +111,7 @@ ConcatImportanceMethodConcatLPResult = @NamedTuple{
 
 function solveConcatImportanceMethodConcatLP(
         lpResults::AbstractArray{ConcatImportanceMethodApproximationLPResult{T}, 1},
-        tBoundaries::ConcatImportanceMethodTBoundaries{T}
+        tBoundaries::AbstractArray{ConcatImportanceMethodTBoundaries{T}, 1}
         )::ConcatImportanceMethodConcatLPResult{T} where {T <: Real}
     ε = 1e-8
 
@@ -164,8 +152,8 @@ function solveConcatImportanceMethodConcatLP(
 
         for k = 1:m
             tₖ⁻ = t⁻[k]; tₖ⁺ = t⁺[k]
-            tₖᴸ⁻ = tBoundaries.tᴸ⁻[k]; tₖᵁ⁻ = tBoundaries.tᵁ⁻[k]
-            tₖᴸ⁺ = tBoundaries.tᴸ⁺[k]; tₖᵁ⁺ = tBoundaries.tᵁ⁺[k]
+            tₖᴸ⁻ = tBoundaries[k].tₖᴸ⁻; tₖᵁ⁻ = tBoundaries[k].tₖᵁ⁻
+            tₖᴸ⁺ = tBoundaries[k].tₖᴸ⁺; tₖᵁ⁺ = tBoundaries[k].tₖᵁ⁺
 
             @constraint(model, tₖᴸ⁻ ≤ tₖ⁻); @constraint(model, tₖ⁻ ≤ tₖᵁ⁻)
             @constraint(model, tₖᴸ⁺ ≤ tₖ⁺); @constraint(model, tₖ⁺ ≤ tₖᵁ⁺)
@@ -186,17 +174,6 @@ function solveConcatImportanceMethodConcatLP(
                 @constraint(model, vᵢᵁ⁻ ≥ tₖ⁻ * wₖᵢᵁ⁻)
                 @constraint(model, vᵢᴸ⁺ ≥ tₖ⁺ * wₖᵢᴸ⁺)
                 @constraint(model, vᵢᵁ⁺ ≤ tₖ⁺ * wₖᵢᵁ⁺)
-
-#                 for j = 1:n
-#                     if i == j continue end
-#                     wₖⱼᴸ⁻ = lpResults[k].wₖᴸ⁻[j]; wₖⱼᵁ⁻ = lpResults[k].wₖᵁ⁻[j]
-#                     wₖⱼᴸ⁺ = lpResults[k].wₖᴸ⁺[j]; wₖⱼᵁ⁺ = lpResults[k].wₖᵁ⁺[j]
-
-#                     @constraint(model, tₖ⁺ * wₖⱼᴸ⁺ - εᵢᴸ ≤ wᵢᴸ)
-#                     @constraint(model, wᵢᴸ ≤ tₖ⁻ * wₖⱼᴸ⁻ + εᵢᴸ)
-#                     @constraint(model, tₖ⁻ * wₖⱼᵁ⁻ - εᵢᵁ ≤ wᵢᵁ)
-#                     @constraint(model, wᵢᵁ ≤ tₖ⁺ * wₖⱼᵁ⁺ + εᵢᵁ)
-#                 end
             end
         end
 
