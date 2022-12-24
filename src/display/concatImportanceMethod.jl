@@ -2,15 +2,30 @@ using LaTeXStrings
 
 include("../concatImportanceMethod/concatImportanceMethod.jl")
 
-ConcatImportanceMethodBothApproximationLPResultLaTeXString = @NamedTuple{
+ConcatImportanceMethodApproximationLPResultLaTeXString = @NamedTuple{
     wₖᴸ⁻::String, wₖᵁ⁻::String,
     wₖᴸ⁺::String, wₖᵁ⁺::String
     }
 
-function concatImportanceMethodBothApproximationLPResultLaTeXString(
-        result::ConcatImportanceMethodBothApproximationLPResult{T}
-        )::ConcatImportanceMethodBothApproximationLPResultLaTeXString where {T <: Real}
+function concatImportanceMethodApproximationLPResultLaTeXString(
+        result::ConcatImportanceMethodApproximationLPResult{T}
+        )::ConcatImportanceMethodApproximationLPResultLaTeXString where {T <: Real}
     n = length(result.wₖᴸ⁻)
+
+    # W⁻ = ∅
+    if any(isinf.(result.wₖᴸ⁻)) || any(isinf.(result.wₖᵁ⁻))
+        wₖᴸ⁺ = "\\begin{bmatrix}"; wₖᵁ⁺ = "\\begin{bmatrix}"
+        for i = 1:n
+            wₖᴸ⁺ *= " $(string(round(result.wₖᴸ⁺[i], digits=3))) "
+            wₖᵁ⁺ *= " $(string(round(result.wₖᵁ⁺[i], digits=3))) "
+            if i != n
+                wₖᴸ⁺ *= " \\\\ "; wₖᵁ⁺ *= " \\\\ "
+            end
+        end
+        wₖᴸ⁺ *= "\\end{bmatrix}"; wₖᵁ⁺ *= "\\end{bmatrix}"
+    
+        return (wₖᴸ⁻="", wₖᵁ⁻="", wₖᴸ⁺=wₖᴸ⁺, wₖᵁ⁺=wₖᵁ⁺)
+    end
 
     wₖᴸ⁻ = "\\begin{bmatrix}"; wₖᵁ⁻ = "\\begin{bmatrix}"
     wₖᴸ⁺ = "\\begin{bmatrix}"; wₖᵁ⁺ = "\\begin{bmatrix}"
@@ -30,18 +45,26 @@ function concatImportanceMethodBothApproximationLPResultLaTeXString(
     return (wₖᴸ⁻=wₖᴸ⁻, wₖᵁ⁻=wₖᵁ⁻, wₖᴸ⁺=wₖᴸ⁺, wₖᵁ⁺=wₖᵁ⁺)
 end
 
-function displayConcatImportanceMethodBothApproximationLPResults(
-        results::AbstractArray{ConcatImportanceMethodBothApproximationLPResult{T}}
+function displayConcatImportanceMethodApproximationLPResults(
+        results::AbstractArray{ConcatImportanceMethodApproximationLPResult{T}}
         ) where {T <: Real}
     for k = eachindex(results)
-        resultₛₜᵣ = concatImportanceMethodBothApproximationLPResultLaTeXString(results[k])
+        resultₛₜᵣ = concatImportanceMethodApproximationLPResultLaTeXString(results[k])
 
-        display(L"""
-            w_{%$(k)}^{\text{L}-} = %$(resultₛₜᵣ.wₖᴸ⁻), ~~
-            w_{%$(k)}^{\text{U}-} = %$(resultₛₜᵣ.wₖᵁ⁻), ~~
-            w_{%$(k)}^{\text{L}+} = %$(resultₛₜᵣ.wₖᴸ⁺), ~~
-            w_{%$(k)}^{\text{U}+} = %$(resultₛₜᵣ.wₖᵁ⁺)
-        """)
+        if resultₛₜᵣ.wₖᴸ⁻ == "" || resultₛₜᵣ.wₖᵁ⁻ == ""
+            display(L"W_%$(k)^- = \emptyset")
+            display(L"""
+                w_{%$(k)}^{\text{L}+} = %$(resultₛₜᵣ.wₖᴸ⁺), ~~
+                w_{%$(k)}^{\text{U}+} = %$(resultₛₜᵣ.wₖᵁ⁺)
+            """)
+        else
+            display(L"""
+                w_{%$(k)}^{\text{L}-} = %$(resultₛₜᵣ.wₖᴸ⁻), ~~
+                w_{%$(k)}^{\text{U}-} = %$(resultₛₜᵣ.wₖᵁ⁻), ~~
+                w_{%$(k)}^{\text{L}+} = %$(resultₛₜᵣ.wₖᴸ⁺), ~~
+                w_{%$(k)}^{\text{U}+} = %$(resultₛₜᵣ.wₖᵁ⁺)
+            """)
+        end
     end
 end
 
@@ -52,12 +75,17 @@ ConcatImportanceMethodTBoundariesLaTeXString = @NamedTuple{
 function concatImportanceMethodTBoundariesLaTeXString(
         boundaries::ConcatImportanceMethodTBoundaries{T}
         )::ConcatImportanceMethodTBoundariesLaTeXString where {T <: Real}
-    tₖᴸ⁻ = string(round(boundaries.tₖᴸ⁻, digits=3))
-    tₖᵁ⁻ = string(round(boundaries.tₖᵁ⁻, digits=3))
-    tₖᴸ⁺ = string(round(boundaries.tₖᴸ⁺, digits=3))
-    tₖᵁ⁺ = string(round(boundaries.tₖᵁ⁺, digits=3))
-
-    return (tₖᴸ⁻=tₖᴸ⁻, tₖᵁ⁻=tₖᵁ⁻, tₖᴸ⁺=tₖᴸ⁺, tₖᵁ⁺=tₖᵁ⁺)
+    if isinf(boundaries.tₖᴸ⁻) || isinf(boundaries.tₖᵁ⁻)
+        tₖᴸ⁺ = string(round(boundaries.tₖᴸ⁺, digits=3))
+        tₖᵁ⁺ = string(round(boundaries.tₖᵁ⁺, digits=3))
+        return (tₖᴸ⁻="", tₖᵁ⁻="", tₖᴸ⁺=tₖᴸ⁺, tₖᵁ⁺=tₖᵁ⁺)
+    else
+        tₖᴸ⁻ = string(round(boundaries.tₖᴸ⁻, digits=3))
+        tₖᵁ⁻ = string(round(boundaries.tₖᵁ⁻, digits=3))
+        tₖᴸ⁺ = string(round(boundaries.tₖᴸ⁺, digits=3))
+        tₖᵁ⁺ = string(round(boundaries.tₖᵁ⁺, digits=3))
+        return (tₖᴸ⁻=tₖᴸ⁻, tₖᵁ⁻=tₖᵁ⁻, tₖᴸ⁺=tₖᴸ⁺, tₖᵁ⁺=tₖᵁ⁺)
+    end
 end
 
 function displayConcatImportanceMethodTBoundaries(
@@ -70,12 +98,19 @@ function displayConcatImportanceMethodTBoundaries(
     tₖᴸ⁺ = boundariesₛₜᵣ.tₖᴸ⁺
     tₖᵁ⁺ = boundariesₛₜᵣ.tₖᵁ⁺
 
-    display(L"""
-        t_{%$(k)}^{\text{L}-} = %$(tₖᴸ⁻), ~~
-        t_{%$(k)}^{\text{U}-} = %$(tₖᵁ⁻), ~~
-        t_{%$(k)}^{\text{L}+} = %$(tₖᴸ⁺), ~~
-        t_{%$(k)}^{\text{U}+} = %$(tₖᵁ⁺)
-    """)
+    if tₖᴸ⁻  == "" || tₖᵁ⁻ == ""
+        display(L"""
+            t_{%$(k)}^{\text{L}+} = %$(tₖᴸ⁺), ~~
+            t_{%$(k)}^{\text{U}+} = %$(tₖᵁ⁺)
+        """)
+    else
+        display(L"""
+            t_{%$(k)}^{\text{L}-} = %$(tₖᴸ⁻), ~~
+            t_{%$(k)}^{\text{U}-} = %$(tₖᵁ⁻), ~~
+            t_{%$(k)}^{\text{L}+} = %$(tₖᴸ⁺), ~~
+            t_{%$(k)}^{\text{U}+} = %$(tₖᵁ⁺)
+        """)
+    end
 end
 
 function displayConcatImportanceMethodTBoundaries(
