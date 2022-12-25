@@ -127,7 +127,8 @@ function solveConcatImportanceMethodUpperApproximationLP(
             # IntervalArithmetic の ∅ に合わせて
             # wₖᵢᴸ⁻ = ∞, wₖᵢᵁ⁻ = -∞
             wₖᴸ⁻=fill(∞, n), wₖᵁ⁻=fill(-∞, n),
-            wₖᴸ⁺=value.(wₖᴸ⁺), wₖᵁ⁺=value.(wₖᵁ⁺),
+            wₖᴸ⁺=map(i -> correctPrecisionLoss(value(wₖᴸ⁺[i]), value(wₖᵁ⁺[i])), 1:n),
+            wₖᵁ⁺=value.(wₖᵁ⁺),
             optimalValue=optimalValue
         )
     finally
@@ -194,8 +195,10 @@ function solveConcatImportanceMethodBothApproximationLP(
         optimalValue = sum(value.(wₖᴸ⁻)) - sum(value.(wₖᴸ⁺)) + sum(value.(wₖᵁ⁺)) - sum(value.(wₖᵁ⁻))
 
         return (
-            wₖᴸ⁻=value.(wₖᴸ⁻), wₖᵁ⁻=value.(wₖᵁ⁻),
-            wₖᴸ⁺=value.(wₖᴸ⁺), wₖᵁ⁺=value.(wₖᵁ⁺),
+            wₖᴸ⁻=map(i -> correctPrecisionLoss(value(wₖᴸ⁻[i]), value(wₖᵁ⁻[i])), 1:n),
+            wₖᵁ⁻=value.(wₖᵁ⁻),
+            wₖᴸ⁺=map(i -> correctPrecisionLoss(value(wₖᴸ⁺[i]), value(wₖᵁ⁺[i])), 1:n),
+            wₖᵁ⁺=value.(wₖᵁ⁺),
             optimalValue=optimalValue
         )
     finally
@@ -342,7 +345,7 @@ function solveConcatImportanceMethodConcatLP(
             wᴸ=map(i -> correctPrecisionLoss(value(wᴸ[i]), value(wᵁ[i])), 1:n),
             wᵁ=value.(wᵁ),
             # precision error の補正
-            # vᵢᴸ⁻ と vᵢᵁ⁻ が十分に近い値ならば vᵢᴸ⁻ <- vᵢᵁ⁻
+            # vᵢᴸ⁻ と vᵢᵁ⁻ が十t⁻分に近い値ならば vᵢᴸ⁻ <- vᵢᵁ⁻
             vᴸ⁻=map(i -> correctPrecisionLoss(value(vᴸ⁻[i]), value(vᵁ⁻[i])), 1:n),
             vᵁ⁻=value.(vᵁ⁻),
             vᴸ⁺=value.(vᴸ⁺), vᵁ⁺=value.(vᴸ⁺),
