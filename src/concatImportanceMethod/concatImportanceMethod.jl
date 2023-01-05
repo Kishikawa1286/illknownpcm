@@ -304,8 +304,8 @@ function solveConcatImportanceMethodConcatLP(
             # k ∈ M'
             if isfinite(tₖᴸ⁻) && isfinite(tₖᵁ⁻)
                 @constraint(model, tₖᴸ⁻ ≤ tₖ⁻); @constraint(model, tₖ⁻ ≤ tₖᵁ⁻)
-                @constraint(model, tₖᴸ⁺ ≤ tₖ⁺); @constraint(model, tₖ⁺ ≤ tₖᵁ⁺)
             end
+            @constraint(model, tₖᴸ⁺ ≤ tₖ⁺); @constraint(model, tₖ⁺ ≤ tₖᵁ⁺)
 
             for i = 1:n
                 wₖᵢᴸ⁻ = lpResults[k].wₖᴸ⁻[i]; wₖᵢᵁ⁻ = lpResults[k].wₖᵁ⁻[i]
