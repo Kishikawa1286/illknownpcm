@@ -1,15 +1,15 @@
 using LaTeXStrings
 
-include("../concatImportanceMethod/concatImportanceMethod.jl")
+include("./method3.jl")
 
-ConcatImportanceMethodApproximationLPResultLaTeXString = @NamedTuple{
+ApproximationLPResultLaTeXString_m3 = @NamedTuple{
     wₖᴸ⁻::String, wₖᵁ⁻::String,
     wₖᴸ⁺::String, wₖᵁ⁺::String
     }
 
-function concatImportanceMethodApproximationLPResultLaTeXString(
-        result::ConcatImportanceMethodApproximationLPResult{T}
-        )::ConcatImportanceMethodApproximationLPResultLaTeXString where {T <: Real}
+function approximationLPResultLaTeXString_m3(
+        result::ApproximationLPResult_m3{T}
+        )::ApproximationLPResultLaTeXString_m3 where {T <: Real}
     n = length(result.wₖᴸ⁻)
 
     # W⁻ = ∅
@@ -45,11 +45,11 @@ function concatImportanceMethodApproximationLPResultLaTeXString(
     return (wₖᴸ⁻=wₖᴸ⁻, wₖᵁ⁻=wₖᵁ⁻, wₖᴸ⁺=wₖᴸ⁺, wₖᵁ⁺=wₖᵁ⁺)
 end
 
-function displayConcatImportanceMethodApproximationLPResults(
-        results::AbstractArray{ConcatImportanceMethodApproximationLPResult{T}}
+function displayApproximationLPResults_m3(
+        results::AbstractArray{ApproximationLPResult_m3{T}}
         ) where {T <: Real}
     for k = eachindex(results)
-        resultₛₜᵣ = concatImportanceMethodApproximationLPResultLaTeXString(results[k])
+        resultₛₜᵣ = approximationLPResultLaTeXString_m3(results[k])
 
         if resultₛₜᵣ.wₖᴸ⁻ == "" || resultₛₜᵣ.wₖᵁ⁻ == ""
             display(L"W_%$(k)^- = \emptyset")
@@ -68,13 +68,13 @@ function displayConcatImportanceMethodApproximationLPResults(
     end
 end
 
-ConcatImportanceMethodTBoundariesLaTeXString = @NamedTuple{
+TBoundariesLaTeXString_m3 = @NamedTuple{
     tₖᴸ⁻::String, tₖᵁ⁻::String, tₖᴸ⁺::String, tₖᵁ⁺::String
     }
 
-function concatImportanceMethodTBoundariesLaTeXString(
-        boundaries::ConcatImportanceMethodTBoundaries{T}
-        )::ConcatImportanceMethodTBoundariesLaTeXString where {T <: Real}
+function tBoundariesLaTeXString_m3(
+        boundaries::TBoundaries_m3{T}
+        )::TBoundariesLaTeXString_m3 where {T <: Real}
     if isinf(boundaries.tₖᴸ⁻) || isinf(boundaries.tₖᵁ⁻)
         tₖᴸ⁺ = string(round(boundaries.tₖᴸ⁺, digits=3))
         tₖᵁ⁺ = string(round(boundaries.tₖᵁ⁺, digits=3))
@@ -88,10 +88,10 @@ function concatImportanceMethodTBoundariesLaTeXString(
     end
 end
 
-function displayConcatImportanceMethodTBoundaries(
-        boundaries::ConcatImportanceMethodTBoundaries{T},
+function displayTBoundaries_m3(
+        boundaries::TBoundaries_m3{T},
         k::Integer) where {T <: Real}
-    boundariesₛₜᵣ = concatImportanceMethodTBoundariesLaTeXString(boundaries)
+    boundariesₛₜᵣ = tBoundariesLaTeXString_m3(boundaries)
 
     tₖᴸ⁻ = boundariesₛₜᵣ.tₖᴸ⁻
     tₖᵁ⁻ = boundariesₛₜᵣ.tₖᵁ⁻
@@ -113,14 +113,14 @@ function displayConcatImportanceMethodTBoundaries(
     end
 end
 
-function displayConcatImportanceMethodTBoundaries(
-        boundaries::AbstractArray{ConcatImportanceMethodTBoundaries{T}}) where {T <: Real}
+function displayTBoundaries_m3(
+        boundaries::AbstractArray{TBoundaries_m3{T}}) where {T <: Real}
     for k = eachindex(boundaries)
-        displayConcatImportanceMethodTBoundaries(boundaries[k], k)
+        displayTBoundaries_m3(boundaries[k], k)
     end
 end
 
-ConcatImportanceMethodConcatLPResultLaTeXString = @NamedTuple{
+ConcatLPResultLaTeXString_m3 = @NamedTuple{
     t⁻::String, t⁺::String,
     W::String,
     vᴸ⁻::String, vᵁ⁻::String,
@@ -128,9 +128,9 @@ ConcatImportanceMethodConcatLPResultLaTeXString = @NamedTuple{
     εᴸ::String, εᵁ::String,
     }
 
-function concatImportanceMethodConcatLPResultLaTeXString(
-        result::ConcatImportanceMethodConcatLPResult{T}
-        )::ConcatImportanceMethodConcatLPResultLaTeXString where {T <: Real}
+function concatLPResultLaTeXString_m3(
+        result::ConcatLPResult_m3{T}
+        )::ConcatLPResultLaTeXString_m3 where {T <: Real}
     m = length(result.t⁻)
     n = length(result.wᴸ)
 
@@ -177,10 +177,10 @@ function concatImportanceMethodConcatLPResultLaTeXString(
     )
 end
 
-function displayConcatImportanceMethodConcatLPResult(
-        result::ConcatImportanceMethodConcatLPResult{T}
+function displayConcatLPResult_m3(
+        result::ConcatLPResult_m3{T}
         ) where {T <: Real}
-    resultₛₜᵣ = concatImportanceMethodConcatLPResultLaTeXString(result)
+    resultₛₜᵣ = concatLPResultLaTeXString_m3(result)
     
     display(L"""
         t^- = %$(resultₛₜᵣ.t⁻), ~~

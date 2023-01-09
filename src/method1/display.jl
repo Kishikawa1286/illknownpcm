@@ -1,17 +1,17 @@
 using LaTeXStrings
 
-include("../concatMatricesMethod/concatMatricesMethod.jl")
+include("./method1.jl")
 
-ConcatMatricesMethodLPResultLaTeXString = @NamedTuple{
+LPResultLaTeXString_m1 = @NamedTuple{
     W::String,
     wᴸ⁻::String, wᵁ⁻::String,
     wᴸ⁺::String, wᵁ⁺::String,
     εᴸ::String, εᵁ::String
     }
 
-function concatMatricesMethodLPResultLaTeXString(
-        result::ConcatMatricesMethodLPResult{T}
-        )::ConcatMatricesMethodLPResultLaTeXString where {T <: Real}
+function lPResultLaTeXString_m1(
+        result::LPResult_m1{T}
+        )::LPResultLaTeXString_m1 where {T <: Real}
     n = length(result.wᴸ)
 
     W = "\\begin{bmatrix}"
@@ -46,10 +46,10 @@ function concatMatricesMethodLPResultLaTeXString(
     )
 end
 
-function displayConcatMatricesMethodLPResult(
-        result::ConcatMatricesMethodLPResult{T}
+function displayLPResult_m1(
+        result::LPResult_m1{T}
         ) where {T <: Real}
-    resultₛₜᵣ = concatMatricesMethodLPResultLaTeXString(result)
+    resultₛₜᵣ = lPResultLaTeXString_m1(result)
 
     display(L"W = %$(resultₛₜᵣ.W)")
     display(L"""

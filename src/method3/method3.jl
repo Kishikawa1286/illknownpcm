@@ -2,11 +2,11 @@ using IntervalArithmetic
 using JuMP
 import HiGHS
 
-include("../nearlyEqual/nearlyEqual.jl")
-include("../twofoldInterval/twofoldInterval.jl")
-include("../twofoldIntervalPCM/twofoldIntervalPCM.jl")
+include("../nearlyEqual/index.jl")
+include("../twofoldInterval/index.jl")
+include("../twofoldIntervalPCM/index.jl")
 
-function solveConcatImportanceMethodFeasibilityCheckLP(
+function solveFeasibilityCheckLP_m3(
         Aₖ::Matrix{Interval{T}})::T where {T <: Real}
     ε = 1e-8
 
@@ -72,15 +72,15 @@ function solveConcatImportanceMethodFeasibilityCheckLP(
     end
 end
 
-ConcatImportanceMethodApproximationLPResult = @NamedTuple{
+ApproximationLPResult_m3 = @NamedTuple{
     wₖᴸ⁻::Vector{T}, wₖᵁ⁻::Vector{T},
     wₖᴸ⁺::Vector{T}, wₖᵁ⁺::Vector{T},
     optimalValue::T
     } where {T <: Real}
 
-function solveConcatImportanceMethodUpperApproximationLP(
+function solveUpperApproximationLP_m3(
         Aₖ::Matrix{Interval{T}}
-        )::ConcatImportanceMethodApproximationLPResult{T} where {T <: Real}
+        )::ApproximationLPResult_m3{T} where {T <: Real}
     ε = 1e-8
 
     if !isIntervalPCM(Aₖ)
@@ -137,9 +137,9 @@ function solveConcatImportanceMethodUpperApproximationLP(
     end
 end
 
-function solveConcatImportanceMethodBothApproximationLP(
+function solveBothApproximationLP_m3(
         Aₖ::Matrix{Interval{T}}
-        )::ConcatImportanceMethodApproximationLPResult{T} where {T <: Real}
+        )::ApproximationLPResult_m3{T} where {T <: Real}
     ε = 1e-8
 
     if !isIntervalPCM(Aₖ)
@@ -207,24 +207,24 @@ function solveConcatImportanceMethodBothApproximationLP(
     end
 end
 
-function solveConcatImportanceMethodApproximationLP(
+function solveApproximationLP_m3(
         Aₖ::Matrix{Interval{T}}
-        )::ConcatImportanceMethodApproximationLPResult{T} where {T <: Real}
+        )::ApproximationLPResult_m3{T} where {T <: Real}
     # W⁻ = ∅ かどうか判定するLPの最適値が0ならば W⁻ ≠ ∅
-    if solveConcatImportanceMethodFeasibilityCheckLP(Aₖ) == 0
-        return solveConcatImportanceMethodBothApproximationLP(Aₖ)
+    if solveFeasibilityCheckLP_m3(Aₖ) == 0
+        return solveBothApproximationLP_m3(Aₖ)
     else
-        return solveConcatImportanceMethodUpperApproximationLP(Aₖ)
+        return solveUpperApproximationLP_m3(Aₖ)
     end
 end
 
-ConcatImportanceMethodTBoundaries = @NamedTuple{
+TBoundaries_m3 = @NamedTuple{
     tₖᴸ⁻::T, tₖᵁ⁻::T, tₖᴸ⁺::T, tₖᵁ⁺::T,
     } where {T <: Real}
 
-function calculateConcatImportanceMethodTBoundaries(
-        lpResult::ConcatImportanceMethodApproximationLPResult{T}
-        )::ConcatImportanceMethodTBoundaries{T} where {T <: Real}
+function calculateTBoundaries_m3(
+        lpResult::ApproximationLPResult_m3{T}
+        )::TBoundaries_m3{T} where {T <: Real}
     wₖᴸ⁻ = lpResult.wₖᴸ⁻; wₖᵁ⁻ = lpResult.wₖᵁ⁻
     wₖᴸ⁺ = lpResult.wₖᴸ⁺; wₖᵁ⁺ = lpResult.wₖᵁ⁺
 
@@ -246,7 +246,7 @@ function calculateConcatImportanceMethodTBoundaries(
     return (tₖᴸ⁻=tₖᴸ⁻, tₖᵁ⁻=tₖᵁ⁻, tₖᴸ⁺=tₖᴸ⁺, tₖᵁ⁺=tₖᵁ⁺)
 end
 
-ConcatImportanceMethodConcatLPResult = @NamedTuple{
+ConcatLPResult_m3 = @NamedTuple{
     t⁻::Vector{T}, t⁺::Vector{T},
     wᴸ::Vector{T}, wᵁ::Vector{T},
     vᴸ⁻::Vector{T}, vᵁ⁻::Vector{T},
@@ -255,10 +255,10 @@ ConcatImportanceMethodConcatLPResult = @NamedTuple{
     optimalValue::T
     } where {T <: Real}
 
-function solveConcatImportanceMethodConcatLP(
-        lpResults::AbstractArray{ConcatImportanceMethodApproximationLPResult{T}, 1},
-        tBoundaries::AbstractArray{ConcatImportanceMethodTBoundaries{T}, 1}
-        )::ConcatImportanceMethodConcatLPResult{T} where {T <: Real}
+function solveConcatLP_m3(
+        lpResults::AbstractArray{ApproximationLPResult_m3{T}, 1},
+        tBoundaries::AbstractArray{TBoundaries_m3{T}, 1}
+        )::ConcatLPResult_m3{T} where {T <: Real}
     ε = 1e-8
 
     m = length(lpResults)
@@ -358,8 +358,8 @@ function solveConcatImportanceMethodConcatLP(
     end
 end
 
-function generateConcatImportanceMethodPCM(
-        lpResult::ConcatImportanceMethodConcatLPResult{T}
+function generatePCM_m3(
+        lpResult::ConcatLPResult_m3{T}
         )::Matrix{TwofoldInterval{T}} where {T <: Real}
     n = length(lpResult.wᴸ)
 

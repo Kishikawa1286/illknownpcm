@@ -1,6 +1,6 @@
 using IntervalArithmetic
 
-include("../nearlyEqual/nearlyEqual.jl")
+include("../nearlyEqual/index.jl")
 
 @inline function isIntervalPCM(A::Matrix{Interval{T}})::Bool where {T <: Real}
     m, n = size(A)

@@ -1,4 +1,4 @@
-include("../twofoldInterval/twofoldInterval.jl")
+include("./twofoldIntervalPCM.jl")
 
 """
 二重区間行列を LaTeX 形式にする  

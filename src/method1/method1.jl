@@ -1,11 +1,12 @@
 using JuMP
 import HiGHS
 
-include("../nearlyEqual/nearlyEqual.jl")
-include("../twofoldInterval/twofoldInterval.jl")
-include("../twofoldIntervalPCM/twofoldIntervalPCM.jl")
+include("../nearlyEqual/index.jl")
+include("../twofoldInterval/index.jl")
+include("../twofoldIntervalPCM/index.jl")
 
-ConcatMatricesMethodLPResult = @NamedTuple{
+
+LPResult_m1 = @NamedTuple{
     wᴸ::Vector{T}, wᵁ::Vector{T},
     wᴸ⁻::Vector{T}, wᵁ⁻::Vector{T},
     wᴸ⁺::Vector{T}, wᵁ⁺::Vector{T},
@@ -13,9 +14,9 @@ ConcatMatricesMethodLPResult = @NamedTuple{
     optimalValue::T
     } where {T <: Real}
 
-function solveConcatMatricesMethodLP(
+function solveLP_m1(
         A::Matrix{TwofoldInterval{T}}
-        )::ConcatMatricesMethodLPResult{T} where {T <: Real}
+        )::LPResult_m1{T} where {T <: Real}
     ε = 1e-8
 
     if !isTwofoldIntervalPCM(A)
@@ -94,9 +95,9 @@ function solveConcatMatricesMethodLP(
     end
 end
 
-function updateConcatMatricesMethodPCM(
+function updatePCM_m1(
         A::Matrix{TwofoldInterval{T}},
-        result::ConcatMatricesMethodLPResult{T}
+        result::LPResult_m1{T}
         )::Matrix{TwofoldInterval{T}} where {T <: Real}
     if !isTwofoldIntervalPCM(A)
         throw(ArgumentError("Given matrix is not valid as twofold interval matrix."))

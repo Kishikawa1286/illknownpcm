@@ -1,7 +1,7 @@
 using IntervalArithmetic
 
-include("../intervalPCM/intervalPCM.jl")
-include("../twofoldInterval/twofoldInterval.jl")
+include("../intervalPCM/index.jl")
+include("../twofoldInterval/index.jl")
 
 @inline function isTwofoldIntervalPCM(
         A::Matrix{TwofoldInterval{T}})::Bool where {T <: Real}
@@ -64,7 +64,6 @@ include("../twofoldInterval/twofoldInterval.jl")
     return true
 end
 
-
 """
 Interval PCM 2 個から Twofold Interval PCM を生成する
 """
@@ -85,7 +84,7 @@ function intervalPCM2TwofoldIntervalPCM(
 
     m, n = size(A₁)
     # ([1, 1], [1, 1])で埋める
-    A = [(1..1, 1..1) for a in 1:n, b in 1:n]
+    A = fill((1..1, 1..1), (n, n))
 
     for i = 1:n, j = 1:n
         # 対角成分は初期値の([1, 1], [1, 1])のままで良いのでスキップ

@@ -1,6 +1,6 @@
 using IntervalArithmetic
 
-include("../nearlyEqual/nearlyEqual.jl")
+include("../nearlyEqual/index.jl")
 
 TwofoldInterval = Tuple{Interval{T}, Interval{T}} where {T <: Real}
 

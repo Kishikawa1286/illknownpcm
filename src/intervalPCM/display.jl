@@ -1,6 +1,6 @@
 using IntervalArithmetic
 
-include("../intervalPCM/intervalPCM.jl")
+include("./intervalPCM.jl")
 
 """
 区間ベクトルを LaTeX 形式にする  
