@@ -5,7 +5,6 @@ include("../nearlyEqual/index.jl")
 include("../twofoldInterval/index.jl")
 include("../twofoldIntervalPCM/index.jl")
 
-
 LPResult_m1 = @NamedTuple{
     wᴸ::Vector{T}, wᵁ::Vector{T},
     wᴸ⁻::Vector{T}, wᵁ⁻::Vector{T},
