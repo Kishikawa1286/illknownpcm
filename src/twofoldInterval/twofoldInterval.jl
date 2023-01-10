@@ -26,3 +26,16 @@ TwofoldInterval = Tuple{Interval{T}, Interval{T}} where {T <: Real}
 
     return true
 end
+
+function twofoldIntervalMatrix2intervalMatrices(
+        A::Matrix{TwofoldInterval{T}}
+        )::Tuple{Matrix{Interval{T}}, Matrix{Interval{T}}} where {T <: Real}
+    m, n = size(A)
+
+    A⁻ = fill(1.0..1.0, (m, n)); A⁺ = fill(1.0..1.0, (m, n))
+    for i = 1:m, j = 1:n
+        A⁻[i,j] = A[i,j][1]; A⁺[i,j] = A[i,j][2]
+    end
+    
+    return (A⁻, A⁺)
+end

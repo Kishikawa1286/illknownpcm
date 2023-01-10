@@ -8,8 +8,10 @@ include("../nearlyEqual/index.jl")
     if m != n return false end
 
     for i = 1:n, j = 1:n
-        # 空集合の成分が存在しないか
-        if !iscommon(A[i,j]) return false end
+        if !iscommon(A[i,j])
+            if iscommon(A[j,i]) return false end
+            continue
+        end
         
         # (i,j)成分の両端
         aᵢⱼᴸ = A[i,j].lo; aᵢⱼᵁ = A[i,j].hi
