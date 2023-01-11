@@ -41,23 +41,37 @@ end
 function plotConincidenceIndices(
         A::Matrix{Interval{T}},
         B::Matrix{Interval{T}},
-        title::String
+        title::LaTeXString
         ) where {T <: Real}
     indices = coincidenceIndices(A, B)
-
     m, n = size(indices)
+
+    # ヒートマップを [0, 1] スケールにするために表示範囲外に 0 を入れる
+    _indices = fill(1.0, (n+1, n+1))
+    for i = 1:n+1, j = 1:n+1
+        if i != n+1 && j != n+1
+            _indices[i,j] = indices[i,j]
+        else
+            _indices[i,j] = 0.0
+        end
+    end
 
     pyplot()
 
-    h = heatmap(1:n, 1:n, indices,
+    # 表示範囲外に 0 を入れた行列を使う
+    h = heatmap(1:n+1, 1:n+1, _indices,
         c=cgrad([:white, :blue]),
         aspect_ratio=:equal,
+        # 表示範囲をヒートマップのタイルに合わせている
+        # n+1 は表示しない
         xlims=(0.5,n+0.5), ylims=(0.5,n+0.5),
         xticks=1:n, yticks=1:n,
-        yflip=true, title=text(title, 14, "Arial"))
+        # y 軸反転
+        yflip=true,
+        title=title)
     annotate!(
         [(j, i, text(round(indices[i,j],digits=3),
-        12, "Arial", :black))
+        12, "DejaVu Serif", :black))
         for i in 1:n for j in 1:n])
 
     return h
