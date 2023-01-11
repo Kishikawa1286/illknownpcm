@@ -1,5 +1,6 @@
 using IntervalArithmetic
 using Plots
+using LaTeXStrings
 
 include("../nearlyEqual/index.jl")
 include("../intervalPCM/index.jl")
@@ -39,21 +40,24 @@ end
 
 function plotConincidenceIndices(
         A::Matrix{Interval{T}},
-        B::Matrix{Interval{T}}
+        B::Matrix{Interval{T}},
+        title::String
         ) where {T <: Real}
     indices = coincidenceIndices(A, B)
 
     m, n = size(indices)
+
+    pyplot()
 
     h = heatmap(1:n, 1:n, indices,
         c=cgrad([:white, :blue]),
         aspect_ratio=:equal,
         xlims=(0.5,n+0.5), ylims=(0.5,n+0.5),
         xticks=1:n, yticks=1:n,
-        yflip=true)
+        yflip=true, title=text(title, 14, "Arial"))
     annotate!(
         [(j, i, text(round(indices[i,j],digits=3),
-        12, "Computer Modern", :black))
+        12, "Arial", :black))
         for i in 1:n for j in 1:n])
 
     return h

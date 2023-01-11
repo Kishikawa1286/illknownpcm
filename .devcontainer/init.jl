@@ -8,7 +8,8 @@ function main()
         "Printf",
         "Latexify",
         "LaTeXStrings",
-        "Plots"
+        "Plots",
+        "PyPlot"
         ])
 end
 
