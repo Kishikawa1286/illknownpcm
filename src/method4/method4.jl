@@ -23,44 +23,24 @@ function generateTwofoldIntervalMatrix_m4(
     n = length(lpResults[1].wₖᴸ⁻)
 
     # Matrix{AbstractArray{AbstractArray{T,2},2}}
-    Å = fill([[1.0, 1.0], [1.0, 1.0]], (n, n))
-    for i = 1:n, j = 1:n
-        if i == j continue end
-
-        # \bar の代わりに Å を使用
-        åᵢⱼᴸ⁻ = maximum(k -> lpResults[k].wₖᴸ⁻[i]/lpResults[k].wₖᴸ⁻[j], 1:m)
-        åᵢⱼᵁ⁻ = minimum(k -> lpResults[k].wₖᵁ⁻[i]/lpResults[k].wₖᵁ⁻[j], 1:m)
-        åᵢⱼᴸ⁺ = minimum(k -> lpResults[k].wₖᴸ⁺[i]/lpResults[k].wₖᴸ⁺[j], 1:m)
-        åᵢⱼᵁ⁺ = maximum(k -> lpResults[k].wₖᵁ⁺[i]/lpResults[k].wₖᵁ⁺[j], 1:m)
-
-        Å[i,j] = [[åᵢⱼᴸ⁻, åᵢⱼᵁ⁻], [åᵢⱼᴸ⁺, åᵢⱼᵁ⁺]]
-    end
-
     A = fill((1..1, 1..1), (n, n))
     for i = 1:n, j = 1:n
         if i == j continue end
 
-        Åᵢⱼ⁻ = Å[i,j][1]; Åᵢⱼ⁺ = Å[i,j][2]
-        åᵢⱼᴸ⁻ = Åᵢⱼ⁻[1]; åᵢⱼᵁ⁻ = Åᵢⱼ⁻[2]
-        åᵢⱼᴸ⁺ = Åᵢⱼ⁺[1]; åᵢⱼᵁ⁺ = Åᵢⱼ⁺[2]
-        Åⱼᵢ⁻ = Å[j,i][1]; Åⱼᵢ⁺ = Å[j,i][2]
-        åⱼᵢᴸ⁻ = Åⱼᵢ⁻[1]; åⱼᵢᵁ⁻ = Åⱼᵢ⁻[2]
-        åⱼᵢᴸ⁺ = Åⱼᵢ⁺[1]; åⱼᵢᵁ⁺ = Åⱼᵢ⁺[2]
+        aᵢⱼᴸ⁻ = maximum(k -> lpResults[k].wₖᴸ⁻[i]/lpResults[k].wₖᵁ⁻[j], 1:m)
+        aᵢⱼᵁ⁻ = minimum(k -> lpResults[k].wₖᵁ⁻[i]/lpResults[k].wₖᴸ⁻[j], 1:m)
+        aᵢⱼᴸ⁺ = minimum(k -> lpResults[k].wₖᴸ⁺[i]/lpResults[k].wₖᵁ⁺[j], 1:m)
+        aᵢⱼᵁ⁺ = maximum(k -> lpResults[k].wₖᵁ⁺[i]/lpResults[k].wₖᴸ⁺[j], 1:m)
 
-
-        aᵢⱼᴸ⁻ = max(åᵢⱼᴸ⁻, åᵢⱼᴸ⁺, 1/åⱼᵢᵁ⁻, 1/åⱼᵢᵁ⁺)
-        aᵢⱼᵁ⁻ = min(åᵢⱼᵁ⁻, åᵢⱼᵁ⁺, 1/åⱼᵢᴸ⁻, 1/åⱼᵢᴸ⁺)
-        aᵢⱼᴸ⁺ = min(åᵢⱼᴸ⁻, åᵢⱼᴸ⁺, 1/åⱼᵢᵁ⁻, 1/åⱼᵢᵁ⁺)
-        aᵢⱼᵁ⁺ = max(åᵢⱼᵁ⁻, åᵢⱼᵁ⁺, 1/åⱼᵢᴸ⁻, 1/åⱼᵢᴸ⁺)
-
-        aᵢⱼᴸ⁻ = correctPrecisionLoss(aᵢⱼᴸ⁻, aᵢⱼᴸ⁺)
-        aᵢⱼᵁ⁻ = correctPrecisionLoss(aᵢⱼᵁ⁻, aᵢⱼᴸ⁻)
-        aᵢⱼᵁ⁺ = correctPrecisionLoss(aᵢⱼᵁ⁺, aᵢⱼᵁ⁻)
-
+        aᵢⱼᴸ⁺ = correctPrecisionLoss(aᵢⱼᴸ⁺, aᵢⱼᴸ⁻)
+        aᵢⱼᴸ⁻ = correctPrecisionLoss(aᵢⱼᴸ⁻, aᵢⱼᵁ⁻)
+        aᵢⱼᵁ⁻ = correctPrecisionLoss(aᵢⱼᵁ⁻, aᵢⱼᵁ⁺)
+        
+        # (Âᵢⱼ⁻, Âᵢⱼ⁺)
         if aᵢⱼᴸ⁻ > aᵢⱼᵁ⁻
-            A[i,j] = (emptyinterval(), aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
+            A[i, j] = (emptyinterval(), aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
         else
-            A[i,j] = (aᵢⱼᴸ⁻..aᵢⱼᵁ⁻, aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
+            A[i, j] = (aᵢⱼᴸ⁻..aᵢⱼᵁ⁻, aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
         end
     end
 
