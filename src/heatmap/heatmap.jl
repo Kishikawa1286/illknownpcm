@@ -32,7 +32,8 @@ function coincidenceIndices(
             intersection.hi - intersection.lo : 0
         denominator = hull.hi - hull.lo
 
-        conincidenceIndices[i,j] = numerator / denominator
+        # 二つの区間が同じ一点である場合に分母 0 になる
+        conincidenceIndices[i,j] = denominator == 0 ? 0 : numerator / denominator
     end
 
     return conincidenceIndices
