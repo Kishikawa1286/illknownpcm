@@ -71,7 +71,7 @@ function plotConincidenceIndices(
         title=title)
     annotate!(
         [(j, i, text(round(indices[i,j],digits=3),
-        12, "DejaVu Serif", :black))
+        8, "DejaVu Serif", :black))
         for i in 1:n for j in 1:n])
 
     return h
