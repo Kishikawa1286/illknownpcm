@@ -8,7 +8,7 @@ include("../intervalPCM/index.jl")
 function coincidenceIndices(
         A::Matrix{Interval{T}},
         B::Matrix{Interval{T}}
-        )::Matrix{T} where {T <: Real}
+        )::Tuple{Matrix{T}, Integer} where {T <: Real}
     if !isIntervalPCM(A)
         throw(ArgumentError("Given matrix A is not valid as interval PCM."))
     end
@@ -22,11 +22,14 @@ function coincidenceIndices(
     m, n = size(A)
 
     conincidenceIndices = fill(1.0, (n, n))
+    numberOfEmptySet = 0
     for i = 1:n, j = 1:n
         if i == j continue end
 
         intersection = A[i,j] ∩ B[i,j]
         hull = A[i,j] ∪ B[i,j]
+
+        if !iscommon(intersection) numberOfEmptySet += 1 end
 
         numerator = iscommon(intersection) ?
             intersection.hi - intersection.lo : 0
@@ -36,7 +39,7 @@ function coincidenceIndices(
         conincidenceIndices[i,j] = denominator == 0 ? 0 : numerator / denominator
     end
 
-    return conincidenceIndices
+    return (conincidenceIndices, numberOfEmptySet)
 end
 
 function plotConincidenceIndices(
@@ -44,7 +47,7 @@ function plotConincidenceIndices(
         B::Matrix{Interval{T}},
         title::LaTeXString
         ) where {T <: Real}
-    indices = coincidenceIndices(A, B)
+    indices, numberOfEmptySet = coincidenceIndices(A, B)
     m, n = size(indices)
 
     # ヒートマップを [0, 1] スケールにするために表示範囲外に 0 を入れる
@@ -61,7 +64,7 @@ function plotConincidenceIndices(
 
     # 表示範囲外に 0 を入れた行列を使う
     h = heatmap(1:n+1, 1:n+1, _indices,
-        c=cgrad([:white, :blue]),
+        c=cgrad([:white, :skyblue1]),
         aspect_ratio=:equal,
         # 表示範囲をヒートマップのタイルに合わせている
         # n+1 は表示しない
@@ -75,5 +78,5 @@ function plotConincidenceIndices(
         8, "DejaVu Serif", :black))
         for i in 1:n for j in 1:n])
 
-    return h
+    return (h, numberOfEmptySet, indices)
 end
