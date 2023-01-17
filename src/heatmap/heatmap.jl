@@ -8,7 +8,7 @@ include("../intervalPCM/index.jl")
 function coincidenceIndices(
         A::Matrix{Interval{T}},
         B::Matrix{Interval{T}}
-        )::Tuple{Matrix{T}, Integer} where {T <: Real}
+        )::Tuple{Matrix{T}, Matrix{Bool}} where {T <: Real}
     if !isIntervalPCM(A)
         throw(ArgumentError("Given matrix A is not valid as interval PCM."))
     end
@@ -22,14 +22,14 @@ function coincidenceIndices(
     m, n = size(A)
 
     conincidenceIndices = fill(1.0, (n, n))
-    numberOfEmptySet = 0
+    emptySetMap = fill(false, (n, n))
     for i = 1:n, j = 1:n
         if i == j continue end
 
         intersection = A[i,j] ∩ B[i,j]
         hull = A[i,j] ∪ B[i,j]
 
-        if !iscommon(intersection) numberOfEmptySet += 1 end
+        if !iscommon(intersection) emptySetMap[i,j] = true end
 
         numerator = iscommon(intersection) ?
             intersection.hi - intersection.lo : 0
@@ -39,7 +39,7 @@ function coincidenceIndices(
         conincidenceIndices[i,j] = denominator == 0 ? 0 : numerator / denominator
     end
 
-    return (conincidenceIndices, numberOfEmptySet)
+    return (conincidenceIndices, emptySetMap)
 end
 
 function plotConincidenceIndices(
@@ -47,24 +47,15 @@ function plotConincidenceIndices(
         B::Matrix{Interval{T}},
         title::LaTeXString
         ) where {T <: Real}
-    indices, numberOfEmptySet = coincidenceIndices(A, B)
+    indices, emptySetMap = coincidenceIndices(A, B)
     m, n = size(indices)
-
-    # ヒートマップを [0, 1] スケールにするために表示範囲外に 0 を入れる
-    _indices = fill(1.0, (n+1, n+1))
-    for i = 1:n+1, j = 1:n+1
-        if i != n+1 && j != n+1
-            _indices[i,j] = indices[i,j]
-        else
-            _indices[i,j] = 0.0
-        end
-    end
 
     pyplot()
 
     # 表示範囲外に 0 を入れた行列を使う
-    h = heatmap(1:n+1, 1:n+1, _indices,
-        c=cgrad([:white, :skyblue1]),
+    h = heatmap(1:n, 1:n, indices,
+        clim=(0, 1),
+        c=cgrad([:white, :royalblue1]),
         aspect_ratio=:equal,
         # 表示範囲をヒートマップのタイルに合わせている
         # n+1 は表示しない
@@ -73,10 +64,17 @@ function plotConincidenceIndices(
         # y 軸反転
         yflip=true,
         title=title)
+    # 共通部分がなければ赤くする
+    for i = 1:n, j = 1:n
+        if emptySetMap[i,j]
+            s = Shape([i-0.5, i+0.5, i+0.5, i-0.5], [j-0.5, j-0.5, j+0.5, j+0.5])
+            plot!(s, fillrange=s, fillstyle = ://, fc=:red, lc=RGBA(1, 1, 1, 0), legend=false)
+        end
+    end
     annotate!(
         [(j, i, text(round(indices[i,j],digits=3),
-        8, "DejaVu Serif", :black))
+        10, "DejaVu Serif", :black))
         for i in 1:n for j in 1:n])
 
-    return (h, numberOfEmptySet, indices)
+    return (h, indices)
 end
