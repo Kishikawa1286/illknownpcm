@@ -9,7 +9,8 @@ function main()
         "Latexify",
         "LaTeXStrings",
         "Plots",
-        "PyPlot"
+        "PyPlot",
+        "Distributions"
         ])
 end
 

@@ -1,4 +1,6 @@
 using IntervalArithmetic
+using Random
+using Distributions
 
 include("../nearlyEqual/index.jl")
 
@@ -31,4 +33,40 @@ include("../nearlyEqual/index.jl")
     end
 
     return true 
+end
+
+@inline function randamizedIntervalPCM(
+        A::Matrix{T},
+        seed::Integer=10,
+        width::Real=0.05 # 自然対数スケールでの幅
+        )::Matrix{Interval{T}} where {T <: Real}
+    # seed 固定
+    Random.seed!(seed)
+
+    m, n = size(A)
+
+    if m != n
+        throw(ArgumentError("A must be square matrix."))
+    end
+
+    B = log.(A)
+    C = fill(1..1, (m, n))
+
+    for i = 1:n
+        for j = i:n
+            if i == j continue end
+            r₁ = rand(Uniform(0, width))
+            r₂ = rand(Uniform(0, width))
+            C[i,j] = exp(B[i,j] - r₁)..exp(B[i,j] + r₂)
+        end
+    end
+
+    for i = 1:n
+        for j = 1:i
+            if i == j continue end
+            C[i,j] = 1/C[j,i]
+        end
+    end
+
+    return C
 end
