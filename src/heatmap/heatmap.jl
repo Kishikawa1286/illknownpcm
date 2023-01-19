@@ -4,6 +4,7 @@ using LaTeXStrings
 
 include("../nearlyEqual/index.jl")
 include("../intervalPCM/index.jl")
+include("../nearlyEqual/index.jl")
 
 function coincidenceIndices(
         A::Matrix{Interval{T}},
@@ -25,6 +26,12 @@ function coincidenceIndices(
     emptySetMap = fill(false, (n, n))
     for i = 1:n, j = 1:n
         if i == j continue end
+
+        if nearlyEqual(A[i,j].lo, B[i,j].lo) &&
+                nearlyEqual(A[i,j].hi, B[i,j].hi)
+            conincidenceIndices[i,j] = 1
+            continue
+        end
 
         intersection = A[i,j] ∩ B[i,j]
         hull = A[i,j] ∪ B[i,j]
