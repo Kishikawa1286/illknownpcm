@@ -36,7 +36,9 @@ function coincidenceIndices(
         intersection = A[i,j] ∩ B[i,j]
         hull = A[i,j] ∪ B[i,j]
 
-        if !iscommon(intersection) emptySetMap[i,j] = true end
+        if !iscommon(intersection) && !nearlyEqual(A[i,j].hi, B[i,j].lo) && !nearlyEqual(A[i,j].lo, B[i,j].hi)
+            emptySetMap[i,j] = true
+        end
 
         numerator = iscommon(intersection) ?
             intersection.hi - intersection.lo : 0
