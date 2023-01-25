@@ -272,10 +272,10 @@ function solveConcatLP_m3(
         @variable(model, t⁻[i=1:m] ≥ ε); @variable(model, t⁺[i=1:m] ≥ ε)
         # wᵢᴸ ≥ ε, wᵢᵁ ≥ ε
         @variable(model, wᴸ[i=1:n] ≥ ε); @variable(model, wᵁ[i=1:n] ≥ ε)
-        # vᵢᴸ⁻ ≥ 0, vᵢᵁ⁻ ≥ 0
-        @variable(model, vᴸ⁻[i=1:n] ≥ 0); @variable(model, vᵁ⁻[i=1:n] ≥ 0)
-        # vᵢᴸ⁺ ≥ 0, vᵢᵁ⁺ ≥ 0
-        @variable(model, vᴸ⁺[i=1:n] ≥ 0); @variable(model, vᵁ⁺[i=1:n] ≥ 0)
+        # vᵢᴸ⁻ ≥ ε, vᵢᵁ⁻ ≥ ε
+        @variable(model, vᴸ⁻[i=1:n] ≥ ε); @variable(model, vᵁ⁻[i=1:n] ≥ ε)
+        # vᵢᴸ⁺ ≥ ε, vᵢᵁ⁺ ≥ ε
+        @variable(model, vᴸ⁺[i=1:n] ≥ ε); @variable(model, vᵁ⁺[i=1:n] ≥ ε)
         # εᵢᴸ ≥ 0, εᵢᵁ ≥ 0
         @variable(model, εᴸ[i=1:n] ≥ 0); @variable(model, εᵁ[i=1:n] ≥ 0)
 
@@ -348,7 +348,8 @@ function solveConcatLP_m3(
             # vᵢᴸ⁻ と vᵢᵁ⁻ が十t⁻分に近い値ならば vᵢᴸ⁻ <- vᵢᵁ⁻
             vᴸ⁻=map(i -> correctPrecisionLoss(value(vᴸ⁻[i]), value(vᵁ⁻[i])), 1:n),
             vᵁ⁻=value.(vᵁ⁻),
-            vᴸ⁺=value.(vᴸ⁺), vᵁ⁺=value.(vᴸ⁺),
+            vᴸ⁺=map(i -> correctPrecisionLoss(value(vᴸ⁺[i]), value(vᵁ⁺[i])), 1:n),
+            vᵁ⁺=value.(vᴸ⁺),
             εᴸ=value.(εᴸ), εᵁ=value.(εᵁ),
             optimalValue=optimalValue
         )
@@ -391,6 +392,8 @@ function generatePCM_m3(
         âᵢⱼᴸ⁻ = correctPrecisionLoss(âᵢⱼᴸ⁻, âᵢⱼᴸ⁺)
         âᵢⱼᵁ⁻ = correctPrecisionLoss(âᵢⱼᵁ⁻, âᵢⱼᴸ⁻)
         âᵢⱼᵁ⁺ = correctPrecisionLoss(âᵢⱼᵁ⁺, âᵢⱼᵁ⁻)
+        
+        âᵢⱼᵁ⁺ = correctPrecisionLoss(âᵢⱼᵁ⁺, âᵢⱼᴸ⁺)
 
         # (Âᵢⱼ⁻, Âᵢⱼ⁺)
         if âᵢⱼᴸ⁻ > âᵢⱼᵁ⁻

@@ -35,6 +35,46 @@ include("../nearlyEqual/index.jl")
     return true 
 end
 
+function isConsistentIntervalPCM(
+        A::Matrix{T})::Bool where {T <: Real}
+    if !isIntervalPCM(A) return false end
+
+    _, n = size(A)
+
+    for i = 1:n, j = 1:n
+        if i ≥ j continue end
+        aᵢⱼᴸ = A[i,j].lo; aᵢⱼᵁ = A[i,j].hi
+        ma = maximum(k -> A[i,k].lo * A[k,j].lo, 1:n)
+        if !nearlyEqual(aᵢⱼᴸ, ma) && aᵢⱼᴸ < ma
+            return false
+        end
+        mi = minimum(k -> A[i,k].hi * A[k,j].hi, 1:n)
+        if !nearlyEqual(aᵢⱼᵁ, mi) && aᵢⱼᵁ > mi
+            return false
+        end
+    end
+
+    return true
+end
+
+function isWeaklyConsistentIntervalPCM(
+        A::Matrix{T})::Bool where {T <: Real}
+    if !isIntervalPCM(A) return false end
+
+    _, n = size(A)
+
+    for i = 1:n, j = 1:n, k = 1:n
+        if i ≥ j || j ≥ k continue end
+            if !nearlyEqual(
+                    A[i,j].lo * A[i,j].hi,
+                    A[i,k].lo * A[i,k].hi * A[k,j].lo * A[k,j].hi)
+                return false
+        end
+    end
+
+    return true
+end
+
 @inline function randamizedIntervalPCM(
         A::Matrix{T},
         seed::Integer=10,
