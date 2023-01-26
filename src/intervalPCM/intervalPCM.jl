@@ -41,34 +41,17 @@ function isConsistentIntervalPCM(
 
     _, n = size(A)
 
-    for i = 1:n, j = 1:n
-        if i ≥ j continue end
-        aᵢⱼᴸ = A[i,j].lo; aᵢⱼᵁ = A[i,j].hi
-        ma = maximum(k -> A[i,k].lo * A[k,j].lo, 1:n)
-        if !nearlyEqual(aᵢⱼᴸ, ma) && aᵢⱼᴸ < ma
-            return false
+    for i = 1:n, j = 1:n, k = 1:n, s = 1:n, r = 1:n
+        if j == i || k == i || s == i || r == i
+            continue
         end
-        mi = minimum(k -> A[i,k].hi * A[k,j].hi, 1:n)
-        if !nearlyEqual(aᵢⱼᵁ, mi) && aᵢⱼᵁ > mi
-            return false
+        if j == k || s == r
+            continue
         end
-    end
 
-    return true
-end
-
-function isWeaklyConsistentIntervalPCM(
-        A::Matrix{T})::Bool where {T <: Real}
-    if !isIntervalPCM(A) return false end
-
-    _, n = size(A)
-
-    for i = 1:n, j = 1:n, k = 1:n
-        if i ≥ j || j ≥ k continue end
-            if !nearlyEqual(
-                    A[i,j].lo * A[i,j].hi,
-                    A[i,k].lo * A[i,k].hi * A[k,j].lo * A[k,j].hi)
-                return false
+        if !nearlyEqualLoose(A[i,j].lo * A[j,k].hi * A[k,i].lo,
+                A[i,s].lo * A[s,r].hi * A[r,i].lo)
+            return false
         end
     end
 
