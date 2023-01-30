@@ -3,8 +3,7 @@ using LaTeXStrings
 include("./method3.jl")
 
 ApproximationLPResultLaTeXString_m3 = @NamedTuple{
-    wₖᴸ⁻::String, wₖᵁ⁻::String,
-    wₖᴸ⁺::String, wₖᵁ⁺::String
+    Wₖ⁻::String, Wₖ⁺::String
     }
 
 function approximationLPResultLaTeXString_m3(
@@ -14,35 +13,35 @@ function approximationLPResultLaTeXString_m3(
 
     # W⁻ = ∅
     if any(isinf.(result.wₖᴸ⁻)) || any(isinf.(result.wₖᵁ⁻))
-        wₖᴸ⁺ = "\\begin{bmatrix}"; wₖᵁ⁺ = "\\begin{bmatrix}"
+        Wₖ⁺ = "\\begin{bmatrix}"
         for i = 1:n
-            wₖᴸ⁺ *= " $(string(round(result.wₖᴸ⁺[i], digits=3))) "
-            wₖᵁ⁺ *= " $(string(round(result.wₖᵁ⁺[i], digits=3))) "
+            wₖᴸ⁺ = string(round(result.wₖᴸ⁺[i], digits=3))
+            wₖᵁ⁺ = string(round(result.wₖᵁ⁺[i], digits=3))
+            Wₖ⁺ *= " \\left[ $(wₖᴸ⁺), $(wₖᵁ⁺) \\right] "
             if i != n
-                wₖᴸ⁺ *= " \\\\ "; wₖᵁ⁺ *= " \\\\ "
+                Wₖ⁺ *= " \\\\ "
             end
         end
-        wₖᴸ⁺ *= "\\end{bmatrix}"; wₖᵁ⁺ *= "\\end{bmatrix}"
+        Wₖ⁺ *= "\\end{bmatrix}"
     
-        return (wₖᴸ⁻="", wₖᵁ⁻="", wₖᴸ⁺=wₖᴸ⁺, wₖᵁ⁺=wₖᵁ⁺)
+        return (Wₖ⁻="", Wₖ⁺=Wₖ⁺)
     end
 
-    wₖᴸ⁻ = "\\begin{bmatrix}"; wₖᵁ⁻ = "\\begin{bmatrix}"
-    wₖᴸ⁺ = "\\begin{bmatrix}"; wₖᵁ⁺ = "\\begin{bmatrix}"
+    Wₖ⁻ = "\\begin{bmatrix}"; Wₖ⁺ = "\\begin{bmatrix}"
     for i = 1:n
-        wₖᴸ⁻ *= " $(string(round(result.wₖᴸ⁻[i], digits=3))) "
-        wₖᵁ⁻ *= " $(string(round(result.wₖᵁ⁻[i], digits=3))) "
-        wₖᴸ⁺ *= " $(string(round(result.wₖᴸ⁺[i], digits=3))) "
-        wₖᵁ⁺ *= " $(string(round(result.wₖᵁ⁺[i], digits=3))) "
+        wₖᴸ⁻ = string(round(result.wₖᴸ⁻[i], digits=3))
+        wₖᵁ⁻ = string(round(result.wₖᵁ⁻[i], digits=3))
+        Wₖ⁻ *= " \\left[ $(wₖᴸ⁻), $(wₖᵁ⁻) \\right] "
+        wₖᴸ⁺ = string(round(result.wₖᴸ⁺[i], digits=3))
+        wₖᵁ⁺ = string(round(result.wₖᵁ⁺[i], digits=3))
+        Wₖ⁺ *= " \\left[ $(wₖᴸ⁺), $(wₖᵁ⁺) \\right] "
         if i != n
-            wₖᴸ⁻ *= " \\\\ "; wₖᵁ⁻ *= " \\\\ "
-            wₖᴸ⁺ *= " \\\\ "; wₖᵁ⁺ *= " \\\\ "
+            Wₖ⁻ *= " \\\\ "; Wₖ⁺ *= " \\\\ "
         end
     end
-    wₖᴸ⁻ *= "\\end{bmatrix}"; wₖᵁ⁻ *= "\\end{bmatrix}"
-    wₖᴸ⁺ *= "\\end{bmatrix}"; wₖᵁ⁺ *= "\\end{bmatrix}"
+    Wₖ⁻ *= "\\end{bmatrix}"; Wₖ⁺ *= "\\end{bmatrix}"
 
-    return (wₖᴸ⁻=wₖᴸ⁻, wₖᵁ⁻=wₖᵁ⁻, wₖᴸ⁺=wₖᴸ⁺, wₖᵁ⁺=wₖᵁ⁺)
+    return (Wₖ⁻="", Wₖ⁺=Wₖ⁺)
 end
 
 function displayApproximationLPResults_m3(
@@ -51,19 +50,12 @@ function displayApproximationLPResults_m3(
     for k = eachindex(results)
         resultₛₜᵣ = approximationLPResultLaTeXString_m3(results[k])
 
-        if resultₛₜᵣ.wₖᴸ⁻ == "" || resultₛₜᵣ.wₖᵁ⁻ == ""
-            display(L"W_%$(k)^- = \emptyset")
-            display(L"""
-                w_{%$(k)}^{\text{L}+} = %$(resultₛₜᵣ.wₖᴸ⁺), ~~
-                w_{%$(k)}^{\text{U}+} = %$(resultₛₜᵣ.wₖᵁ⁺)
-            """)
+        if resultₛₜᵣ.Wₖ⁻ == ""
+            display(L"W_%$(k)^- = \\emptyset")
+            display(L"W_%$(k)^+ = %$(resultₛₜᵣ.Wₖ⁺)")
         else
-            display(L"""
-                w_{%$(k)}^{\text{L}-} = %$(resultₛₜᵣ.wₖᴸ⁻), ~~
-                w_{%$(k)}^{\text{U}-} = %$(resultₛₜᵣ.wₖᵁ⁻), ~~
-                w_{%$(k)}^{\text{L}+} = %$(resultₛₜᵣ.wₖᴸ⁺), ~~
-                w_{%$(k)}^{\text{U}+} = %$(resultₛₜᵣ.wₖᵁ⁺)
-            """)
+            display(L"W_%$(k)^- = %$(resultₛₜᵣ.Wₖ⁻)")
+            display(L"W_%$(k)^+ = %$(resultₛₜᵣ.Wₖ⁺)")
         end
     end
 end

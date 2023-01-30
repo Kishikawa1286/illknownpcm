@@ -36,8 +36,8 @@ function generateTwofoldIntervalMatrix_m4(
         aᵢⱼᴸ⁻ = correctPrecisionLoss(aᵢⱼᴸ⁻, aᵢⱼᵁ⁻)
         aᵢⱼᵁ⁻ = correctPrecisionLoss(aᵢⱼᵁ⁻, aᵢⱼᵁ⁺)
         
-        # (Âᵢⱼ⁻, Âᵢⱼ⁺)
-        if aᵢⱼᴸ⁻ > aᵢⱼᵁ⁻
+        # 重要度の下近似がなければ NaN
+        if isnan(aᵢⱼᴸ⁻) || isnan(aᵢⱼᵁ⁻) || aᵢⱼᴸ⁻ > aᵢⱼᵁ⁻
             A[i, j] = (emptyinterval(), aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
         else
             A[i, j] = (aᵢⱼᴸ⁻..aᵢⱼᵁ⁻, aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
