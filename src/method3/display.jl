@@ -41,7 +41,7 @@ function approximationLPResultLaTeXString_m3(
     end
     Wₖ⁻ *= "\\end{bmatrix}"; Wₖ⁺ *= "\\end{bmatrix}"
 
-    return (Wₖ⁻="", Wₖ⁺=Wₖ⁺)
+    return (Wₖ⁻=Wₖ⁻, Wₖ⁺=Wₖ⁺)
 end
 
 function displayApproximationLPResults_m3(
