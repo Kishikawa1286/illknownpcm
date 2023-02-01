@@ -61,10 +61,9 @@ function plotConincidenceIndices(
 
     pyplot()
 
-    # 表示範囲外に 0 を入れた行列を使う
     h = heatmap(1:n, 1:n, indices,
         clim=(0, 1),
-        c=cgrad([:white, :royalblue1]),
+        c=cgrad([:white, :indianred1]),
         aspect_ratio=:equal,
         # 表示範囲をヒートマップのタイルに合わせている
         # n+1 は表示しない
@@ -73,16 +72,9 @@ function plotConincidenceIndices(
         # y 軸反転
         yflip=true,
         title=title)
-    # 共通部分がなければ赤くする
-    for i = 1:n, j = 1:n
-        if emptySetMap[i,j]
-            s = Shape([i-0.5, i+0.5, i+0.5, i-0.5], [j-0.5, j-0.5, j+0.5, j+0.5])
-            plot!(s, fillrange=s, fillstyle = ://, fc=:red, lc=RGBA(1, 1, 1, 0), legend=false)
-        end
-    end
     annotate!(
-        [(j, i, text(round(indices[i,j],digits=3),
-        10, "DejaVu Serif", :black))
+        [(j, i, text(emptySetMap[i,j] ? L"\emptyset" : round(indices[i,j], digits=3),
+        11, "sans-serif", :black))
         for i in 1:n for j in 1:n])
 
     return (h, indices)
