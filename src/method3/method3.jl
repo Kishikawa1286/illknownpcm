@@ -45,6 +45,8 @@ function solveFeasibilityCheckLP_m3(
             @constraint(model, ∑wₖⱼᵁ⁺ + wₖᵢᴸ⁺ ≥ 1)
 
             for j = 1:n
+                if i == j continue end
+
                 aₖᵢⱼᴸ = Aₖ[i,j].lo; aₖᵢⱼᵁ = Aₖ[i,j].hi
                 wₖⱼᴸ⁻ = wₖᴸ⁻[j]; wₖⱼᵁ⁻ = wₖᵁ⁻[j]; wₖⱼᴸ⁺ = wₖᴸ⁺[j]; wₖⱼᵁ⁺ = wₖᵁ⁺[j]
 
@@ -107,6 +109,8 @@ function solveUpperApproximationLP_m3(
             @constraint(model, ∑wₖⱼᵁ⁺ + wₖᵢᴸ⁺ ≥ 1)
 
             for j = 1:n
+                if i == j continue end
+
                 aₖᵢⱼᴸ = Aₖ[i,j].lo; aₖᵢⱼᵁ = Aₖ[i,j].hi
                 wₖⱼᴸ⁺ = wₖᴸ⁺[j]; wₖⱼᵁ⁺ = wₖᵁ⁺[j]
 
@@ -174,6 +178,8 @@ function solveBothApproximationLP_m3(
             @constraint(model, ∑wₖⱼᵁ⁺ + wₖᵢᴸ⁺ ≥ 1)
 
             for j = 1:n
+                if i == j continue end
+
                 aₖᵢⱼᴸ = Aₖ[i,j].lo; aₖᵢⱼᵁ = Aₖ[i,j].hi
                 wₖⱼᴸ⁻ = wₖᴸ⁻[j]; wₖⱼᵁ⁻ = wₖᵁ⁻[j]; wₖⱼᴸ⁺ = wₖᴸ⁺[j]; wₖⱼᵁ⁺ = wₖᵁ⁺[j]
 
@@ -284,38 +290,13 @@ function solveConcatLP_m3(
             vᵢᴸ⁻ = vᴸ⁻[i]; vᵢᵁ⁻ = vᵁ⁻[i]; vᵢᴸ⁺ = vᴸ⁺[i]; vᵢᵁ⁺ = vᵁ⁺[i]
             εᵢᴸ = εᴸ[i]; εᵢᵁ = εᵁ[i]
 
-            # @constraint(model, vᵢᴸ⁻ ≥ minimum(filter(v -> v != 0 && isfinite(v), [
-            #     map(k -> tBoundaries[k].tₖᴸ⁻ * lpResults[k].wₖᴸ⁻[i], 1:m)...,
-            #     map(k -> tBoundaries[k].tₖᴸ⁺ * lpResults[k].wₖᴸ⁺[i], 1:m)...
-            # ])))
-            # @constraint(model, vᵢᴸ⁺ ≥ minimum(filter(v -> v != 0 && isfinite(v), [
-            #     map(k -> tBoundaries[k].tₖᴸ⁻ * lpResults[k].wₖᴸ⁻[i], 1:m)...,
-            #     map(k -> tBoundaries[k].tₖᴸ⁺ * lpResults[k].wₖᴸ⁺[i], 1:m)...
-            # ])))
-            @constraint(model, vᵢᴸ⁻ ≤ maximum(filter(v -> v != 0 && isfinite(v), [
-                map(k -> tBoundaries[k].tₖᵁ⁻ * lpResults[k].wₖᴸ⁻[i], 1:m)...,
-                map(k -> tBoundaries[k].tₖᵁ⁺ * lpResults[k].wₖᴸ⁺[i], 1:m)...
-            ])))
-            # @constraint(model, vᵢᴸ⁺ ≤ maximum(filter(v -> v != 0 && isfinite(v), [
+            # @constraint(model, vᵢᴸ⁻ ≤ maximum(filter(v -> v != 0 && isfinite(v), [
             #     map(k -> tBoundaries[k].tₖᵁ⁻ * lpResults[k].wₖᴸ⁻[i], 1:m)...,
             #     map(k -> tBoundaries[k].tₖᵁ⁺ * lpResults[k].wₖᴸ⁺[i], 1:m)...
             # ])))
-            
-            @constraint(model, vᵢᵁ⁻ ≥ minimum(filter(v -> v != 0 && isfinite(v), [
-                map(k -> tBoundaries[k].tₖᴸ⁻ * lpResults[k].wₖᵁ⁻[i], 1:m)...,
-                map(k -> tBoundaries[k].tₖᴸ⁺ * lpResults[k].wₖᵁ⁺[i], 1:m)...
-            ])))
-            # @constraint(model, vᵢᵁ⁺ ≥ minimum(filter(v -> v != 0 && isfinite(v), [
+            # @constraint(model, vᵢᵁ⁻ ≥ minimum(filter(v -> v != 0 && isfinite(v), [
             #     map(k -> tBoundaries[k].tₖᴸ⁻ * lpResults[k].wₖᵁ⁻[i], 1:m)...,
             #     map(k -> tBoundaries[k].tₖᴸ⁺ * lpResults[k].wₖᵁ⁺[i], 1:m)...
-            # ])))
-            # @constraint(model, vᵢᵁ⁻ ≤ maximum(filter(v -> v != 0 && isfinite(v), [
-            #     map(k -> tBoundaries[k].tₖᵁ⁻ * lpResults[k].wₖᵁ⁻[i], 1:m)...,
-            #     map(k -> tBoundaries[k].tₖᵁ⁺ * lpResults[k].wₖᵁ⁺[i], 1:m)...
-            # ])))
-            # @constraint(model, vᵢᵁ⁺ ≤ maximum(filter(v -> v != 0 && isfinite(v), [
-            #     map(k -> tBoundaries[k].tₖᵁ⁻ * lpResults[k].wₖᵁ⁻[i], 1:m)...,
-            #     map(k -> tBoundaries[k].tₖᵁ⁺ * lpResults[k].wₖᵁ⁺[i], 1:m)...
             # ])))
 
             @constraint(model, wᵢᵁ ≥ wᵢᴸ)

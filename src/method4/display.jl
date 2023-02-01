@@ -51,7 +51,7 @@ end
 function displayCancellingLPResultLaTeXString_m4(
         result::CancellingLPResult_m4{T}
         ) where {T <: Real}
-    resultₛₜᵣ = lPResultLaTeXString_m1(result)
+    resultₛₜᵣ = cancellingLPResultLaTeXString_m4(result)
 
     display(L"W = %$(resultₛₜᵣ.W)")
     display(L"""

@@ -98,6 +98,8 @@ function solveCancellingLP_m4(
             @constraint(model, ∑wⱼᵁ + wᵢᴸ ≥ 1)
 
             for j = 1:n
+                if i == j continue end
+
                 aᵢⱼᴸ⁺ = A[i,j][2].lo; aᵢⱼᵁ⁺ = A[i,j][2].hi
                 wⱼᴸ = wᴸ[j]; wⱼᵁ = wᵁ[j]
 
@@ -133,7 +135,7 @@ function solveCancellingLP_m4(
             # wᵢᴸ⁻ と wᵢᵁ⁻ が十分に近い値ならば wᵢᴸ⁻ <- wᵢᵁ⁻
             wᴸ⁻=map(i -> correctPrecisionLoss(value(wᴸ⁻[i]), value(wᵁ⁻[i])), 1:n),
             wᵁ⁻=value.(wᵁ⁻),
-            wᴸ⁺=value.(wᴸ⁺), wᵁ⁺=value.(wᴸ⁺),
+            wᴸ⁺=value.(wᴸ⁺), wᵁ⁺=value.(wᵁ⁺),
             εᴸ=value.(εᴸ), εᵁ=value.(εᵁ),
             optimalValue=optimalValue
         )

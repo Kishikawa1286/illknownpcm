@@ -52,6 +52,10 @@ function solveLP_m1(
             @constraint(model, ∑wⱼᵁ + wᵢᴸ ≥ 1)
 
             for j = 1:n
+                if i == j
+                    continue
+                end
+
                 aᵢⱼᴸ⁻ = A[i,j][1].lo; aᵢⱼᵁ⁻ = A[i,j][1].hi
                 aᵢⱼᴸ⁺ = A[i,j][2].lo; aᵢⱼᵁ⁺ = A[i,j][2].hi
                 wⱼᴸ = wᴸ[j]; wⱼᵁ = wᵁ[j]
@@ -69,11 +73,11 @@ function solveLP_m1(
         @constraint(model, sum(wᴸ) + sum(wᵁ) == 2) # 中心総和 = 1
 
         # 目的関数 ∑(εᵢᴸ + εᵢᵁ)
-        @objective(model, Min, sum(i -> εᴸ[i] + εᵁ[i], 1:n))
+        @objective(model, Min, sum(εᴸ) + sum(εᵁ))
 
         optimize!(model)
 
-        optimalValue = sum(i -> value(εᴸ[i]) + value(εᵁ[i]), 1:n)
+        optimalValue = sum(value.(εᴸ)) + sum(value.(εᵁ))
 
         return (
             # precision error の補正
@@ -84,7 +88,7 @@ function solveLP_m1(
             # wᵢᴸ⁻ と wᵢᵁ⁻ が十分に近い値ならば wᵢᴸ⁻ <- wᵢᵁ⁻
             wᴸ⁻=map(i -> correctPrecisionLoss(value(wᴸ⁻[i]), value(wᵁ⁻[i])), 1:n),
             wᵁ⁻=value.(wᵁ⁻),
-            wᴸ⁺=value.(wᴸ⁺), wᵁ⁺=value.(wᴸ⁺),
+            wᴸ⁺=value.(wᴸ⁺), wᵁ⁺=value.(wᵁ⁺),
             εᴸ=value.(εᴸ), εᵁ=value.(εᵁ),
             optimalValue=optimalValue
         )
