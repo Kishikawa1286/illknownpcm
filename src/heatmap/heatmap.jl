@@ -59,14 +59,14 @@ function plotConincidenceIndices(
     indices, emptySetMap = coincidenceIndices(A, B)
     m, n = size(indices)
 
-    pyplot()
+    font = Plots.font("sans-serif", 18)
+    pyplot(guidefont=font, xtickfont=font, ytickfont=font, legendfont=font, colorbar_tickfontsize=18)
 
     h = heatmap(1:n, 1:n, indices,
         clim=(0, 1),
         c=cgrad([:white, :indianred1]),
         aspect_ratio=:equal,
         # 表示範囲をヒートマップのタイルに合わせている
-        # n+1 は表示しない
         xlims=(0.5,n+0.5), ylims=(0.5,n+0.5),
         xticks=1:n, yticks=1:n,
         # y 軸反転
@@ -74,7 +74,7 @@ function plotConincidenceIndices(
         title=title)
     annotate!(
         [(j, i, text(emptySetMap[i,j] ? L"\emptyset" : round(indices[i,j], digits=3),
-        11, "sans-serif", :black))
+        18, "sans-serif", :black))
         for i in 1:n for j in 1:n])
 
     return (h, indices)
