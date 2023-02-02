@@ -35,6 +35,27 @@ include("../nearlyEqual/index.jl")
     return true 
 end
 
+# function isConsistentIntervalPCM(
+#         A::Matrix{T})::Bool where {T <: Real}
+#     if !isIntervalPCM(A) return false end
+
+#     _, n = size(A)
+
+#     for i = 1:n, j = 1:n, k = 1:n, l = 1:n
+#         if j == k || k == l continue end
+#         if !nearlyEqual(A[i,j].lo * A[j,k].hi * A[k,l].lo,
+#                 A[i,l].lo)
+#             return false
+#         end
+#         if !nearlyEqual(A[i,j].hi * A[j,k].lo * A[k,l].hi,
+#                 A[i,l].hi)
+#             return false
+#         end
+#     end
+
+#     return true
+# end
+
 function isWeaklyConsistentIntervalPCM(
         A::Matrix{T})::Bool where {T <: Real}
     if !isIntervalPCM(A) return false end
@@ -68,37 +89,38 @@ function isWeaklyConsistentIntervalPCM(
     return true
 end
 
-function isConsistentIntervalPCM(
-        A::Matrix{T})::Bool where {T <: Real}
-    if !isIntervalPCM(A) return false end
-    if !isWeaklyConsistentIntervalPCM(A) return false end
+# 正常に判定できていない
+# function isConsistentIntervalPCM(
+#         A::Matrix{T})::Bool where {T <: Real}
+#     if !isIntervalPCM(A) return false end
+#     if !isWeaklyConsistentIntervalPCM(A) return false end
 
-    _, n = size(A)
+#     _, n = size(A)
 
-    for i = 1:n, j = 1:n, k = 1:n
-        if j == i || k == i || j == k continue end
+#     for i = 1:n, j = 1:n, k = 1:n
+#         if j == i || k == i || j == k continue end
 
-        α = A[i,j].lo * A[j,k].hi * A[k,i].lo +
-            A[j,k].hi * A[k,i].lo +
-            sum(map(r -> A[r,j].hi * A[j,i].lo, filter(r -> r != i && r != j, 1:n)))
-        β = minimum(map(
-            r -> A[r,i].lo + 1 +
-            sum(map(s -> A[s,r].hi * A[r,i].lo, filter(s -> s != i && s != r, 1:n))),
-            filter(r -> r != i, 1:n)))
-        γ = 1 + sum(map(r -> A[r,i].lo, filter(r -> r != i, 1:n)))
-        δ = A[j,k].hi * A[k,i].lo + A[i,j].lo * A[j,k].hi * A[k,i].lo +
-            sum(map(r -> A[r,i].lo, filter(r -> r != i && r != j, 1:n)))
-        ϵ = maximum(map(r -> A[r,j].hi * A[j,i].lo + A[i,j].lo * A[j,k].hi * A[k,i].lo +
-            sum(map(s -> A[s,i].lo, filter(s -> s != i && s != r, 1:n))),
-            filter(r -> r != i && r != j, 1:n)))
+#         α = A[i,j].lo * A[j,k].hi * A[k,i].lo +
+#             A[j,k].hi * A[k,i].lo +
+#             sum(map(r -> A[r,j].hi * A[j,i].lo, filter(r -> r != i && r != j, 1:n)))
+#         β = minimum(map(
+#             r -> A[r,i].lo + 1 +
+#             sum(map(s -> A[s,r].hi * A[r,i].lo, filter(s -> s != i && s != r, 1:n))),
+#             filter(r -> r != i, 1:n)))
+#         γ = 1 + sum(map(r -> A[r,i].lo, filter(r -> r != i, 1:n)))
+#         δ = A[j,k].hi * A[k,i].lo + A[i,j].lo * A[j,k].hi * A[k,i].lo +
+#             sum(map(r -> A[r,i].lo, filter(r -> r != i && r != j, 1:n)))
+#         ϵ = maximum(map(r -> A[r,j].hi * A[j,i].lo + A[i,j].lo * A[j,k].hi * A[k,i].lo +
+#             sum(map(s -> A[s,i].lo, filter(s -> s != i && s != r, 1:n))),
+#             filter(r -> r != i && r != j, 1:n)))
 
-        if min(α, β, γ) < max(δ, ϵ)
-            return false
-        end
-    end
+#         if min(α, β, γ) < max(δ, ϵ)
+#             return false
+#         end
+#     end
 
-    return true
-end
+#     return true
+# end
 
 @inline function randamizedIntervalPCM(
         A::Matrix{T},
