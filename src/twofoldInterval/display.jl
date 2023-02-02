@@ -13,12 +13,12 @@ function twofoldIntervalMatrixLaTeXString(
     Aₛₜᵣ = fill("", m, n)
     for i = 1:m, j = 1:n
         # (i,j)成分の外の両端
-        aᵢⱼᴸ⁺ = lpad(string(round(A[i,j][2].lo, digits=3)), 5)
-        aᵢⱼᵁ⁺ = lpad(string(round(A[i,j][2].hi, digits=3)), 5)
+        aᵢⱼᴸ⁺ = string(round(A[i,j][2].lo, digits=2))
+        aᵢⱼᵁ⁺ = string(round(A[i,j][2].hi, digits=2))
         if iscommon(A[i,j][1])
             # (i,j)成分の内の両端
-            aᵢⱼᴸ⁻ = lpad(string(round(A[i,j][1].lo, digits=3)), 5)
-            aᵢⱼᵁ⁻ = lpad(string(round(A[i,j][1].hi, digits=3)), 5)
+            aᵢⱼᴸ⁻ = string(round(A[i,j][1].lo, digits=2))
+            aᵢⱼᵁ⁻ = string(round(A[i,j][1].hi, digits=2))
             Aₛₜᵣ[i,j] = "\\left[ $(aᵢⱼᴸ⁺), \\left[ $(aᵢⱼᴸ⁻), $(aᵢⱼᵁ⁻) \\right], $(aᵢⱼᵁ⁺) \\right]"
         else
             Aₛₜᵣ[i,j] = "\\left[ $(aᵢⱼᴸ⁺), \\emptyset, $(aᵢⱼᵁ⁺) \\right]"
