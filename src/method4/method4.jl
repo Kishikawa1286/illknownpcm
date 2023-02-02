@@ -23,21 +23,42 @@ function generateTwofoldIntervalMatrix_m4(
     n = length(lpResults[1].wₖᴸ⁻)
 
     # Matrix{AbstractArray{AbstractArray{T,2},2}}
+    _A = fill((1..1, 1..1), (n, n))
+    for i = 1:n, j = 1:n
+        if i == j continue end
+
+        aᵢⱼᴸ⁻ = minimum(k -> lpResults[k].wₖᴸ⁻[i]/lpResults[k].wₖᵁ⁻[j], 1:m)
+        aᵢⱼᵁ⁻ = maximum(k -> lpResults[k].wₖᵁ⁻[i]/lpResults[k].wₖᴸ⁻[j], 1:m)
+        aᵢⱼᴸ⁺ = maximum(k -> lpResults[k].wₖᴸ⁺[i]/lpResults[k].wₖᵁ⁺[j], 1:m)
+        aᵢⱼᵁ⁺ = minimum(k -> lpResults[k].wₖᵁ⁺[i]/lpResults[k].wₖᴸ⁺[j], 1:m)
+        
+        # 重要度の下近似がなければ NaN
+        if isnan(aᵢⱼᴸ⁻) || isnan(aᵢⱼᵁ⁻) || aᵢⱼᴸ⁻ > aᵢⱼᵁ⁻
+            _A[i, j] = (emptyinterval(), aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
+        else
+            _A[i, j] = (aᵢⱼᴸ⁻..aᵢⱼᵁ⁻, aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
+        end
+    end
+
     A = fill((1..1, 1..1), (n, n))
     for i = 1:n, j = 1:n
         if i == j continue end
 
-        aᵢⱼᴸ⁻ = maximum(k -> lpResults[k].wₖᴸ⁻[i]/lpResults[k].wₖᵁ⁻[j], 1:m)
-        aᵢⱼᵁ⁻ = minimum(k -> lpResults[k].wₖᵁ⁻[i]/lpResults[k].wₖᴸ⁻[j], 1:m)
-        aᵢⱼᴸ⁺ = minimum(k -> lpResults[k].wₖᴸ⁺[i]/lpResults[k].wₖᵁ⁺[j], 1:m)
-        aᵢⱼᵁ⁺ = maximum(k -> lpResults[k].wₖᵁ⁺[i]/lpResults[k].wₖᴸ⁺[j], 1:m)
+        if !iscommon(_A[i, j][1])
+            A[i,j] = (emptyinterval(), _A[i,j][2].lo.._A[i,j][2].hi)
+            continue
+        end
+
+        aᵢⱼᴸ⁻ = _A[i,j][1].lo < _A[i,j][2].lo ? _A[i,j][2].lo : _A[i,j][1].lo
+        aᵢⱼᵁ⁻ = _A[i,j][1].hi > _A[i,j][2].hi ? _A[i,j][2].hi : _A[i,j][1].hi
+        aᵢⱼᴸ⁺ = _A[i,j][1].lo < _A[i,j][2].lo ? _A[i,j][1].lo : _A[i,j][2].lo
+        aᵢⱼᵁ⁺ = _A[i,j][1].hi > _A[i,j][2].hi ? _A[i,j][1].hi : _A[i,j][2].hi
 
         aᵢⱼᴸ⁺ = correctPrecisionLoss(aᵢⱼᴸ⁺, aᵢⱼᴸ⁻)
         aᵢⱼᴸ⁻ = correctPrecisionLoss(aᵢⱼᴸ⁻, aᵢⱼᵁ⁻)
         aᵢⱼᵁ⁻ = correctPrecisionLoss(aᵢⱼᵁ⁻, aᵢⱼᵁ⁺)
-        
-        # 重要度の下近似がなければ NaN
-        if isnan(aᵢⱼᴸ⁻) || isnan(aᵢⱼᵁ⁻) || aᵢⱼᴸ⁻ > aᵢⱼᵁ⁻
+
+        if aᵢⱼᴸ⁻ > aᵢⱼᵁ⁻
             A[i, j] = (emptyinterval(), aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
         else
             A[i, j] = (aᵢⱼᴸ⁻..aᵢⱼᵁ⁻, aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)

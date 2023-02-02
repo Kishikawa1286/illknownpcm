@@ -54,13 +54,14 @@ end
 function plotConincidenceIndices(
         A::Matrix{Interval{T}},
         B::Matrix{Interval{T}},
-        title::LaTeXString
+        title::LaTeXString,
+        fontsize::Real=14
         ) where {T <: Real}
     indices, emptySetMap = coincidenceIndices(A, B)
     m, n = size(indices)
 
-    font = Plots.font("sans-serif", 18)
-    pyplot(guidefont=font, xtickfont=font, ytickfont=font, legendfont=font, colorbar_tickfontsize=18)
+    font = Plots.font("sans-serif", fontsize)
+    pyplot(guidefont=font, xtickfont=font, ytickfont=font, legendfont=font, colorbar_tickfontsize=fontsize)
 
     h = heatmap(1:n, 1:n, indices,
         clim=(0, 1),
@@ -74,7 +75,7 @@ function plotConincidenceIndices(
         title=title)
     annotate!(
         [(j, i, text(emptySetMap[i,j] ? L"\emptyset" : round(indices[i,j], digits=3),
-        18, "sans-serif", :black))
+        fontsize, "sans-serif", :black))
         for i in 1:n for j in 1:n])
 
     return (h, indices)

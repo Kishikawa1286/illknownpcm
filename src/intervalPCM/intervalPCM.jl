@@ -35,7 +35,7 @@ include("../nearlyEqual/index.jl")
     return true 
 end
 
-function isConsistentIntervalPCM(
+function isWeaklyConsistentIntervalPCM(
         A::Matrix{T})::Bool where {T <: Real}
     if !isIntervalPCM(A) return false end
 
@@ -51,6 +51,48 @@ function isConsistentIntervalPCM(
 
         if !nearlyEqualLoose(A[i,j].lo * A[j,k].hi * A[k,i].lo,
                 A[i,s].lo * A[s,r].hi * A[r,i].lo)
+            return false
+        end
+
+        if !nearlyEqual(A[i,j].lo * A[j,k].hi * A[k,i].lo, 1) &&
+                A[i,j].lo * A[j,k].hi * A[k,i].lo > 1
+            return false
+        end
+
+        if !nearlyEqual(A[s,i].lo, A[s,r].hi * A[r,i].lo) &&
+                A[s,i].lo > A[s,r].hi * A[r,i].lo
+            return false
+        end
+    end
+
+    return true
+end
+
+function isConsistentIntervalPCM(
+        A::Matrix{T})::Bool where {T <: Real}
+    if !isIntervalPCM(A) return false end
+    if !isWeaklyConsistentIntervalPCM(A) return false end
+
+    _, n = size(A)
+
+    for i = 1:n, j = 1:n, k = 1:n
+        if j == i || k == i || j == k continue end
+
+        α = A[i,j].lo * A[j,k].hi * A[k,i].lo +
+            A[j,k].hi * A[k,i].lo +
+            sum(map(r -> A[r,j].hi * A[j,i].lo, filter(r -> r != i && r != j, 1:n)))
+        β = minimum(map(
+            r -> A[r,i].lo + 1 +
+            sum(map(s -> A[s,r].hi * A[r,i].lo, filter(s -> s != i && s != r, 1:n))),
+            filter(r -> r != i, 1:n)))
+        γ = 1 + sum(map(r -> A[r,i].lo, filter(r -> r != i, 1:n)))
+        δ = A[j,k].hi * A[k,i].lo + A[i,j].lo * A[j,k].hi * A[k,i].lo +
+            sum(map(r -> A[r,i].lo, filter(r -> r != i && r != j, 1:n)))
+        ϵ = maximum(map(r -> A[r,j].hi * A[j,i].lo + A[i,j].lo * A[j,k].hi * A[k,i].lo +
+            sum(map(s -> A[s,i].lo, filter(s -> s != i && s != r, 1:n))),
+            filter(r -> r != i && r != j, 1:n)))
+
+        if min(α, β, γ) < max(δ, ϵ)
             return false
         end
     end
