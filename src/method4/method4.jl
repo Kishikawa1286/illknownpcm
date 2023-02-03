@@ -11,6 +11,36 @@ include("../twofoldIntervalPCM/index.jl")
 ApproximationLPResult_m4 = ApproximationLPResult_m3
 solveApproximationLP_m4 = solveApproximationLP_m3
 
+function tildeA(
+        lpResult::ApproximationLPResult_m4{T}
+        )::Matrix{TwofoldInterval{T}} where {T <: Real}
+    n = length(lpResult.wₖᴸ⁻)
+
+    wₖᴸ⁻ = lpResult.wₖᴸ⁻; wₖᵁ⁻ = lpResult.wₖᵁ⁻
+    wₖᴸ⁺ = lpResult.wₖᴸ⁺; wₖᵁ⁺ = lpResult.wₖᵁ⁺
+    A = fill((1..1, 1..1), (n, n))
+    for i = 1:n, j = 1:n
+        if i == j continue end
+        aᵢⱼᴸ⁻ = wₖᴸ⁻[i] / wₖᵁ⁻[j]
+        aᵢⱼᵁ⁻ = wₖᵁ⁻[i] / wₖᴸ⁻[j]
+        aᵢⱼᴸ⁺ = wₖᴸ⁺[i] / wₖᵁ⁺[j]
+        aᵢⱼᵁ⁺ = wₖᵁ⁺[i] / wₖᴸ⁺[j]
+
+        aᵢⱼᴸ⁻ = correctPrecisionLoss(aᵢⱼᴸ⁻, aᵢⱼᴸ⁺)
+        aᵢⱼᵁ⁻ = correctPrecisionLoss(aᵢⱼᵁ⁻, aᵢⱼᴸ⁻)
+        aᵢⱼᵁ⁺ = correctPrecisionLoss(aᵢⱼᵁ⁺, aᵢⱼᵁ⁻)
+        aᵢⱼᵁ⁺ = correctPrecisionLoss(aᵢⱼᵁ⁺, aᵢⱼᴸ⁺)
+
+        if aᵢⱼᴸ⁻ > aᵢⱼᵁ⁻
+            A[i, j] = (emptyinterval(), aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
+        else
+            A[i, j] = (aᵢⱼᴸ⁻..aᵢⱼᵁ⁻, aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
+        end
+    end
+
+    return A
+end
+
 function generateTwofoldIntervalMatrix_m4(
         lpResults::Vector{ApproximationLPResult_m4{T}}
         )::Matrix{TwofoldInterval{T}} where {T <: Real}
