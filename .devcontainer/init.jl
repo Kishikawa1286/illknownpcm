@@ -10,7 +10,8 @@ function main()
         "LaTeXStrings",
         "Plots",
         "PyPlot",
-        "Distributions"
+        "Distributions",
+        "ProgressMeter"
         ])
 end
 

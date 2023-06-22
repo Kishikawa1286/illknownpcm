@@ -18,5 +18,8 @@
 				"julialang.language-julia"
 			]
 		}
+	},
+	"containerEnv": {
+		"JULIA_NUM_THREADS": "22"
 	}
 }
