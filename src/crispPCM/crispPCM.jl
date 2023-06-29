@@ -25,15 +25,26 @@ using Random
 end
 
 @inline function generateConsistentCrispPCM(
-    n::Integer, values::Vector{T}
-    )::Matrix where {T <: Real}
-    A = generateCrispPCM(n, values)
-    if consistencyRatio(A) < 0.1
-        return A
-    else
-        return generateConsistentCrispPCM(n, values)
+    n::Integer,
+    values::Vector{T},
+    max_tries::Integer = 1000
+    )::Matrix{T} where {T <: Real}
+    min_cr = Inf
+    best_A = generateCrispPCM(n, values) 
+
+    for _ in 1:max_tries
+        A = generateCrispPCM(n, values)
+        cr = consistencyRatio(A)
+        if cr < 0.1
+            return A
+        elseif cr < min_cr
+            min_cr = cr
+            best_A = A
+        end
     end
+    return best_A
 end
+
 
 @inline function generateCrispPCM(n::Integer, values::Vector{T})::Matrix where {T <: Real}
     if any(x -> x <= 0, values)

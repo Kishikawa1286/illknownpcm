@@ -20,6 +20,6 @@
 		}
 	},
 	"containerEnv": {
-		"JULIA_NUM_THREADS": "22"
+		"JULIA_NUM_THREADS": "24"
 	}
 }
