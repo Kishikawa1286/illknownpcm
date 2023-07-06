@@ -83,8 +83,8 @@ end
     for i = 1:n
         for j = i:n
             if i == j continue end
-            r₁ = rand(Uniform(1e-8, width))
-            r₂ = rand(Uniform(1e-8, width))
+            r₁ = rand(Uniform(0, width))
+            r₂ = rand(Uniform(0, width))
             C[i,j] = exp(B[i,j] - r₁)..exp(B[i,j] + r₂)
         end
     end

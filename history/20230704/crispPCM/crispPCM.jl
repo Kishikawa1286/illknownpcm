@@ -1,6 +1,5 @@
 using LinearAlgebra
 using Random
-using Distributions
 
 @inline function isCrispPCM(A::Matrix{T})::Bool where {T <: Real}
     # Check if the matrix is square
@@ -27,42 +26,43 @@ end
 
 @inline function generateConsistentCrispPCM(
     n::Integer,
-    S::T,
+    values::Vector{T},
     max_tries::Integer = 1000
     )::Matrix{T} where {T <: Real}
     min_cr = Inf
-    best_A = generateCrispPCM(n, S) 
+    best_A = generateCrispPCM(n, values) 
 
     for _ in 1:max_tries
-        A = generateCrispPCM(n, S)
+        A = generateCrispPCM(n, values)
         cr = consistencyRatio(A)
-        if cr < 0.1
+        if cr < 0.05
             return A
         elseif cr < min_cr
             min_cr = cr
             best_A = A
         end
     end
-
     return best_A
 end
 
-@inline function generateCrispPCM(n::Integer, S::T)::Matrix where {T <: Real}
-    if S <= 1
-        throw(ArgumentError("S must be larger than 1."))
+
+@inline function generateCrispPCM(n::Integer, values::Vector{T})::Matrix where {T <: Real}
+    if any(x -> x <= 0, values)
+        throw(ArgumentError("Values should not contain nonpositive numbers."))
     end
 
-    A = ones(n, n)
+    possible_values = vcat(values, 1 ./ collect(values))
+    pcm = ones(n, n)
 
     for i in 1:n
         for j in (i+1):n
-            aᵢⱼ = exp(rand(Uniform(-log(S), log(S))))
-            A[i, j] = aᵢⱼ
-            A[j, i] = 1/aᵢⱼ
+            val = rand(possible_values)
+            pcm[i, j] = val
+            pcm[j, i] = 1/val
         end
     end
 
-    return A
+    return pcm
 end
 
 @inline function randomIndex(n::Integer)::Real

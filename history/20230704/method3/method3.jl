@@ -415,7 +415,8 @@ function generatePCM_m3(
         âᵢⱼᴸ⁻ = correctPrecisionLoss(âᵢⱼᴸ⁻, âᵢⱼᴸ⁺)
         âᵢⱼᵁ⁻ = correctPrecisionLoss(âᵢⱼᵁ⁻, âᵢⱼᴸ⁻)
         âᵢⱼᵁ⁺ = correctPrecisionLoss(âᵢⱼᵁ⁺, âᵢⱼᵁ⁻)
-        âᵢⱼᴸ⁺ = correctPrecisionLoss(âᵢⱼᴸ⁺, âᵢⱼᵁ⁺)
+        
+        âᵢⱼᵁ⁺ = correctPrecisionLoss(âᵢⱼᵁ⁺, âᵢⱼᴸ⁺)
 
         # (Âᵢⱼ⁻, Âᵢⱼ⁺)
         if âᵢⱼᴸ⁻ > âᵢⱼᵁ⁻

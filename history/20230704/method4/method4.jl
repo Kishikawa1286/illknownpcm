@@ -37,7 +37,7 @@ function tildeA(
         aᵢⱼᴸ⁻ = correctPrecisionLoss(aᵢⱼᴸ⁻, aᵢⱼᴸ⁺)
         aᵢⱼᵁ⁻ = correctPrecisionLoss(aᵢⱼᵁ⁻, aᵢⱼᴸ⁻)
         aᵢⱼᵁ⁺ = correctPrecisionLoss(aᵢⱼᵁ⁺, aᵢⱼᵁ⁻)
-        aᵢⱼᴸ⁺ = correctPrecisionLoss(aᵢⱼᴸ⁺, aᵢⱼᵁ⁺)
+        aᵢⱼᵁ⁺ = correctPrecisionLoss(aᵢⱼᵁ⁺, aᵢⱼᴸ⁺)
 
         if aᵢⱼᴸ⁻ > aᵢⱼᵁ⁻
             A[i, j] = (emptyinterval(), aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
@@ -70,11 +70,6 @@ function generateTwofoldIntervalMatrix_m4(
         aᵢⱼᴸ⁺ = maximum(k -> lpResults[k].wₖᴸ⁺[i]/lpResults[k].wₖᵁ⁺[j], 1:m)
         aᵢⱼᵁ⁺ = minimum(k -> lpResults[k].wₖᵁ⁺[i]/lpResults[k].wₖᴸ⁺[j], 1:m)
         
-        aᵢⱼᴸ⁻ = correctPrecisionLoss(aᵢⱼᴸ⁻, aᵢⱼᴸ⁺)
-        aᵢⱼᵁ⁻ = correctPrecisionLoss(aᵢⱼᵁ⁻, aᵢⱼᴸ⁻)
-        aᵢⱼᵁ⁺ = correctPrecisionLoss(aᵢⱼᵁ⁺, aᵢⱼᵁ⁻)
-        aᵢⱼᴸ⁺ = correctPrecisionLoss(aᵢⱼᴸ⁺, aᵢⱼᵁ⁺)
-
         # 重要度の下近似がなければ NaN
         if isnan(aᵢⱼᴸ⁻) || isnan(aᵢⱼᵁ⁻) || aᵢⱼᴸ⁻ > aᵢⱼᵁ⁻
             _A[i, j] = (emptyinterval(), aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
@@ -97,10 +92,9 @@ function generateTwofoldIntervalMatrix_m4(
         aᵢⱼᴸ⁺ = _A[i,j][1].lo < _A[i,j][2].lo ? _A[i,j][1].lo : _A[i,j][2].lo
         aᵢⱼᵁ⁺ = _A[i,j][1].hi > _A[i,j][2].hi ? _A[i,j][1].hi : _A[i,j][2].hi
 
-        aᵢⱼᴸ⁻ = correctPrecisionLoss(aᵢⱼᴸ⁻, aᵢⱼᴸ⁺)
-        aᵢⱼᵁ⁻ = correctPrecisionLoss(aᵢⱼᵁ⁻, aᵢⱼᴸ⁻)
-        aᵢⱼᵁ⁺ = correctPrecisionLoss(aᵢⱼᵁ⁺, aᵢⱼᵁ⁻)
-        aᵢⱼᴸ⁺ = correctPrecisionLoss(aᵢⱼᴸ⁺, aᵢⱼᵁ⁺)
+        aᵢⱼᴸ⁺ = correctPrecisionLoss(aᵢⱼᴸ⁺, aᵢⱼᴸ⁻)
+        aᵢⱼᴸ⁻ = correctPrecisionLoss(aᵢⱼᴸ⁻, aᵢⱼᵁ⁻)
+        aᵢⱼᵁ⁻ = correctPrecisionLoss(aᵢⱼᵁ⁻, aᵢⱼᵁ⁺)
 
         if aᵢⱼᴸ⁻ > aᵢⱼᵁ⁻
             A[i, j] = (emptyinterval(), aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
@@ -251,10 +245,11 @@ function updatePCM_m4(
         âᵢⱼᵁ⁻ = min(aᵢⱼᵁ⁻, wᵢᵁ⁺/wⱼᴸ, wᵢᵁ/wⱼᴸ⁺)
         âᵢⱼᵁ⁺ = max(aᵢⱼᵁ⁺, wᵢᵁ⁻/wⱼᴸ, wᵢᵁ/wⱼᴸ⁻)
 
-        âᵢⱼᴸ⁻ = correctPrecisionLoss(âᵢⱼᴸ⁻, âᵢⱼᴸ⁺)
-        âᵢⱼᵁ⁻ = correctPrecisionLoss(âᵢⱼᵁ⁻, âᵢⱼᴸ⁻)
-        âᵢⱼᵁ⁺ = correctPrecisionLoss(âᵢⱼᵁ⁺, âᵢⱼᵁ⁻)
+        # âᵢⱼᵁ⁺ = âᵢⱼᴸ⁺ の場合などに precision error で âᵢⱼᵁ⁺ < âᵢⱼᴸ⁺ となることがある
+        # âᵢⱼᴸ⁺ と âᵢⱼᵁ⁺ が十分に近い値ならば âᵢⱼᴸ⁺ <- âᵢⱼᵁ⁺
         âᵢⱼᴸ⁺ = correctPrecisionLoss(âᵢⱼᴸ⁺, âᵢⱼᵁ⁺)
+        # âᵢⱼᴸ⁻ と âᵢⱼᵁ⁻ が十分に近い値ならば âᵢⱼᴸ⁻ <- âᵢⱼᵁ⁻
+        âᵢⱼᴸ⁻ = correctPrecisionLoss(âᵢⱼᴸ⁻, âᵢⱼᵁ⁻)
 
         # (Âᵢⱼ⁻, Âᵢⱼ⁺)
         if âᵢⱼᴸ⁻ > âᵢⱼᵁ⁻
