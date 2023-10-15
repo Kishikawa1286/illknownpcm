@@ -11,7 +11,6 @@ include("../nearlyEqual/index.jl")
 
     for i = 1:n, j = 1:n
         if !iscommon(A[i,j])
-            if iscommon(A[j,i]) return false end
             continue
         end
         

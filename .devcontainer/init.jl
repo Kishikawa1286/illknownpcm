@@ -11,7 +11,8 @@ function main()
         "Plots",
         "PyPlot",
         "Distributions",
-        "ProgressMeter"
+        "ProgressMeter",
+        "StatsPlots"
         ])
 end
 

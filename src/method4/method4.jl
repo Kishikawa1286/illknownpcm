@@ -19,6 +19,13 @@ function method4(A₁::Matrix{Interval{T}}, A₂::Matrix{Interval{T}})::Matrix{T
     return Â
 end
 
+function Ã(
+    Aₖ::Matrix{Interval{T}}
+    )::Matrix{TwofoldInterval{T}} where {T <: Real}
+    result = solveApproximationLP_m3(Aₖ)
+    return tildeA(result)
+end
+
 function tildeA(
         lpResult::ApproximationLPResult_m4{T}
         )::Matrix{TwofoldInterval{T}} where {T <: Real}
@@ -29,6 +36,15 @@ function tildeA(
     A = fill((1..1, 1..1), (n, n))
     for i = 1:n, j = 1:n
         if i == j continue end
+
+        if any(isinf.(wₖᴸ⁻)) || any(isinf.(wₖᵁ⁻))
+            aᵢⱼᴸ⁺ = wₖᴸ⁺[i] / wₖᵁ⁺[j]
+            aᵢⱼᵁ⁺ = wₖᵁ⁺[i] / wₖᴸ⁺[j]
+            aᵢⱼᴸ⁺ = min(aᵢⱼᴸ⁺, aᵢⱼᵁ⁺)
+            A[i, j] = (emptyinterval(), aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
+            continue
+        end
+
         aᵢⱼᴸ⁻ = wₖᴸ⁻[i] / wₖᵁ⁻[j]
         aᵢⱼᵁ⁻ = wₖᵁ⁻[i] / wₖᴸ⁻[j]
         aᵢⱼᴸ⁺ = wₖᴸ⁺[i] / wₖᵁ⁺[j]
@@ -37,7 +53,8 @@ function tildeA(
         aᵢⱼᴸ⁻ = correctPrecisionLoss(aᵢⱼᴸ⁻, aᵢⱼᴸ⁺)
         aᵢⱼᵁ⁻ = correctPrecisionLoss(aᵢⱼᵁ⁻, aᵢⱼᴸ⁻)
         aᵢⱼᵁ⁺ = correctPrecisionLoss(aᵢⱼᵁ⁺, aᵢⱼᵁ⁻)
-        aᵢⱼᴸ⁺ = correctPrecisionLoss(aᵢⱼᴸ⁺, aᵢⱼᵁ⁺)
+        aᵢⱼᴸ⁺ = min(aᵢⱼᴸ⁺, aᵢⱼᵁ⁺)
+        aᵢⱼᴸ⁺ = min(aᵢⱼᴸ⁻, aᵢⱼᵁ⁻)
 
         if aᵢⱼᴸ⁻ > aᵢⱼᵁ⁻
             A[i, j] = (emptyinterval(), aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
