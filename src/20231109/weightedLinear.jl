@@ -25,9 +25,9 @@ function solveWeightedLinear(
         # wᵢᴸ ≥ ε, wᵢᵁ ≥ ε
         @variable(model, wᴸ[i=1:n] ≥ ε); @variable(model, wᵁ[i=1:n] ≥ ε)
         # wᵢᴸ⁻ ≥ 0, wᵢᵁ⁻ ≥ 0
-        @variable(model, wᴸ⁻[i=1:n] ≥ 0); @variable(model, wᵁ⁻[i=1:n] ≥ 0)
+        @variable(model, wᴸ⁻[i=1:n] ≥ ε); @variable(model, wᵁ⁻[i=1:n] ≥ ε)
         # wᵢᴸ⁺ ≥ 0, wᵢᵁ⁺ ≥ 0
-        @variable(model, wᴸ⁺[i=1:n] ≥ 0); @variable(model, wᵁ⁺[i=1:n] ≥ 0)
+        @variable(model, wᴸ⁺[i=1:n] ≥ ε); @variable(model, wᵁ⁺[i=1:n] ≥ ε)
         # εᵢᴸ ≥ 0, εᵢᵁ ≥ 0
         @variable(model, εᴸ[i=1:n] ≥ 0); @variable(model, εᵁ[i=1:n] ≥ 0)
 
