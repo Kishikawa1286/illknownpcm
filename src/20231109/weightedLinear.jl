@@ -72,7 +72,7 @@ function solveWeightedLinear(
 
         JuMP.optimize!(model)
 
-        optimalValue = sum(value.(εᴸ)) + sum(value.(εᵁ))
+        optimalValue = sum(value.(Ŵᴸ' * εᴸ)) + sum(value.(Ŵᵁ' * εᵁ))
 
         wᴸ_value = value.(wᴸ); wᵁ_value = value.(wᵁ)
         wᴸ⁻_value = value.(wᴸ⁻); wᵁ⁻_value = value.(wᵁ⁻)

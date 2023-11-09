@@ -2,14 +2,12 @@ include("../twofoldIntervalPCM/index.jl")
 
 function twofoldIntervalPCM2CrispPCM(
         A::Matrix{TwofoldInterval{T}}
-        )::Matrix{T} where {T <: Real}
+        ) where {T <: Real}
     if !isTwofoldIntervalPCM(A)
         throw(ArgumentError("Given matrix is not valid as twofold interval matrix."))
     end
     
     m, n = size(A)
-
-    Aᶜ = fill(1.0, (n, n))
 
     Āᴸ = fill(1.0, (n, n)); Āᵁ = fill(1.0, (n, n))
     Āᶜ = fill(1.0, (n, n))
@@ -25,7 +23,7 @@ function twofoldIntervalPCM2CrispPCM(
         Āᶜ[i,j] = sqrt(Āᴸ[i,j] * Āᵁ[i,j])
     end
 
-    return Āᶜ
+    return (Āᴸ=Āᴸ, Āᵁ=Āᵁ, Āᶜ=Āᶜ)
 end
 
 function geometric_mean(arr::Vector{T}) where {T <: Real}
