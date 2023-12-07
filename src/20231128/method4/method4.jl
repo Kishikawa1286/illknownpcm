@@ -1,0 +1,290 @@
+using IntervalArithmetic
+using JuMP
+import HiGHS
+
+include("../../method3/index.jl")
+include("../../nearlyEqual/index.jl")
+include("../../twofoldInterval/index.jl")
+include("../../twofoldIntervalPCM/index.jl")
+
+include("../weight.jl")
+
+# 途中までは method3 と同じ
+ApproximationLPResult_m4 = ApproximationLPResult_m3
+solveApproximationLP_m4 = solveApproximationLP_m3
+
+function method4(A₁::Matrix{Interval{T}}, A₂::Matrix{Interval{T}})::Matrix{TwofoldInterval{T}} where {T <: Real}
+    results = solveApproximationLP_m4.([A₁, A₂])
+    A = generateTwofoldIntervalMatrix_m4(results)
+    w = twofoldIntervalPCM2Weights(A)
+    result = solveCancellingLP_m4(A, w.ŵᴸ, w.ŵᵁ)
+    Â = updatePCM_m4(A, result)
+    return Â
+end
+
+function Ã(
+    Aₖ::Matrix{Interval{T}}
+    )::Matrix{TwofoldInterval{T}} where {T <: Real}
+    result = solveApproximationLP_m3(Aₖ)
+    return tildeA(result)
+end
+
+function tildeA(
+        lpResult::ApproximationLPResult_m4{T}
+        )::Matrix{TwofoldInterval{T}} where {T <: Real}
+    n = length(lpResult.wₖᴸ⁻)
+
+    wₖᴸ⁻ = lpResult.wₖᴸ⁻; wₖᵁ⁻ = lpResult.wₖᵁ⁻
+    wₖᴸ⁺ = lpResult.wₖᴸ⁺; wₖᵁ⁺ = lpResult.wₖᵁ⁺
+    A = fill((1..1, 1..1), (n, n))
+    for i = 1:n, j = 1:n
+        if i == j continue end
+
+        if any(isinf.(wₖᴸ⁻)) || any(isinf.(wₖᵁ⁻))
+            aᵢⱼᴸ⁺ = wₖᴸ⁺[i] / wₖᵁ⁺[j]
+            aᵢⱼᵁ⁺ = wₖᵁ⁺[i] / wₖᴸ⁺[j]
+            aᵢⱼᴸ⁺ = min(aᵢⱼᴸ⁺, aᵢⱼᵁ⁺)
+            A[i, j] = (emptyinterval(), aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
+            continue
+        end
+
+        aᵢⱼᴸ⁻ = wₖᴸ⁻[i] / wₖᵁ⁻[j]
+        aᵢⱼᵁ⁻ = wₖᵁ⁻[i] / wₖᴸ⁻[j]
+        aᵢⱼᴸ⁺ = wₖᴸ⁺[i] / wₖᵁ⁺[j]
+        aᵢⱼᵁ⁺ = wₖᵁ⁺[i] / wₖᴸ⁺[j]
+
+        aᵢⱼᴸ⁻ = correctPrecisionLoss(aᵢⱼᴸ⁻, aᵢⱼᴸ⁺)
+        aᵢⱼᵁ⁻ = correctPrecisionLoss(aᵢⱼᵁ⁻, aᵢⱼᴸ⁻)
+        aᵢⱼᵁ⁺ = correctPrecisionLoss(aᵢⱼᵁ⁺, aᵢⱼᵁ⁻)
+        aᵢⱼᴸ⁺ = min(aᵢⱼᴸ⁺, aᵢⱼᵁ⁺)
+        aᵢⱼᴸ⁺ = min(aᵢⱼᴸ⁻, aᵢⱼᵁ⁻)
+
+        if aᵢⱼᴸ⁻ > aᵢⱼᵁ⁻
+            A[i, j] = (emptyinterval(), aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
+        else
+            A[i, j] = (aᵢⱼᴸ⁻..aᵢⱼᵁ⁻, aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
+        end
+    end
+
+    return A
+end
+
+function generateTwofoldIntervalMatrix_m4(
+        lpResults::Vector{ApproximationLPResult_m4{T}}
+        )::Matrix{TwofoldInterval{T}} where {T <: Real}
+    m = length(lpResults)
+
+    if m == 0
+        throw(ArgumentError("Empty array is given."))
+    end
+
+    n = length(lpResults[1].wₖᴸ⁻)
+
+    # Matrix{AbstractArray{AbstractArray{T,2},2}}
+    _A = fill((1..1, 1..1), (n, n))
+    for i = 1:n, j = 1:n
+        if i == j continue end
+
+        aᵢⱼᴸ⁻ = minimum(k -> lpResults[k].wₖᴸ⁻[i]/lpResults[k].wₖᵁ⁻[j], 1:m)
+        aᵢⱼᵁ⁻ = maximum(k -> lpResults[k].wₖᵁ⁻[i]/lpResults[k].wₖᴸ⁻[j], 1:m)
+        aᵢⱼᴸ⁺ = maximum(k -> lpResults[k].wₖᴸ⁺[i]/lpResults[k].wₖᵁ⁺[j], 1:m)
+        aᵢⱼᵁ⁺ = minimum(k -> lpResults[k].wₖᵁ⁺[i]/lpResults[k].wₖᴸ⁺[j], 1:m)
+        
+        aᵢⱼᴸ⁻ = correctPrecisionLoss(aᵢⱼᴸ⁻, aᵢⱼᴸ⁺)
+        aᵢⱼᵁ⁻ = correctPrecisionLoss(aᵢⱼᵁ⁻, aᵢⱼᴸ⁻)
+        aᵢⱼᵁ⁺ = correctPrecisionLoss(aᵢⱼᵁ⁺, aᵢⱼᵁ⁻)
+        aᵢⱼᴸ⁺ = correctPrecisionLoss(aᵢⱼᴸ⁺, aᵢⱼᵁ⁺)
+
+        # 重要度の下近似がなければ NaN
+        if isnan(aᵢⱼᴸ⁻) || isnan(aᵢⱼᵁ⁻) || aᵢⱼᴸ⁻ > aᵢⱼᵁ⁻
+            _A[i, j] = (emptyinterval(), aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
+        else
+            _A[i, j] = (aᵢⱼᴸ⁻..aᵢⱼᵁ⁻, aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
+        end
+    end
+
+    A = fill((1..1, 1..1), (n, n))
+    for i = 1:n, j = 1:n
+        if i == j continue end
+
+        if !iscommon(_A[i, j][1])
+            A[i,j] = (emptyinterval(), _A[i,j][2].lo.._A[i,j][2].hi)
+            continue
+        end
+
+        aᵢⱼᴸ⁻ = _A[i,j][1].lo < _A[i,j][2].lo ? _A[i,j][2].lo : _A[i,j][1].lo
+        aᵢⱼᵁ⁻ = _A[i,j][1].hi > _A[i,j][2].hi ? _A[i,j][2].hi : _A[i,j][1].hi
+        aᵢⱼᴸ⁺ = _A[i,j][1].lo < _A[i,j][2].lo ? _A[i,j][1].lo : _A[i,j][2].lo
+        aᵢⱼᵁ⁺ = _A[i,j][1].hi > _A[i,j][2].hi ? _A[i,j][1].hi : _A[i,j][2].hi
+
+        aᵢⱼᴸ⁻ = correctPrecisionLoss(aᵢⱼᴸ⁻, aᵢⱼᴸ⁺)
+        aᵢⱼᵁ⁻ = correctPrecisionLoss(aᵢⱼᵁ⁻, aᵢⱼᴸ⁻)
+        aᵢⱼᵁ⁺ = correctPrecisionLoss(aᵢⱼᵁ⁺, aᵢⱼᵁ⁻)
+        aᵢⱼᴸ⁺ = correctPrecisionLoss(aᵢⱼᴸ⁺, aᵢⱼᵁ⁺)
+
+        if aᵢⱼᴸ⁻ > aᵢⱼᵁ⁻
+            A[i, j] = (emptyinterval(), aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
+        else
+            A[i, j] = (aᵢⱼᴸ⁻..aᵢⱼᵁ⁻, aᵢⱼᴸ⁺..aᵢⱼᵁ⁺)
+        end
+    end
+
+    if !isTwofoldIntervalPCM(A)
+        throw(ErrorException("Calculated matrix is not twofold interval PCM."))
+    end
+
+    return A
+end
+
+CancellingLPResult_m4 = @NamedTuple{
+    wᴸ::Vector{T}, wᵁ::Vector{T},
+    wᴸ⁻::Vector{T}, wᵁ⁻::Vector{T},
+    wᴸ⁺::Vector{T}, wᵁ⁺::Vector{T},
+    εᴸ::Vector{T}, εᵁ::Vector{T},
+    optimalValue::T
+    } where {T <: Real}
+
+function solveCancellingLP_m4(
+        A::Matrix{TwofoldInterval{T}},
+        Ŵᴸ::Vector{T},
+        Ŵᵁ::Vector{T}
+        )::CancellingLPResult_m4{T} where {T <: Real}
+    ε = 1e-8
+
+    if !isTwofoldIntervalPCM(A)
+        throw(ArgumentError("Given matrix is not valid as twofold interval matrix."))
+    end
+
+    m, n = size(A)
+    model = Model(HiGHS.Optimizer)
+    set_silent(model)
+
+    try
+        # wᵢᴸ ≥ ε, wᵢᵁ ≥ ε
+        @variable(model, wᴸ[i=1:n] ≥ ε); @variable(model, wᵁ[i=1:n] ≥ ε)
+        # wᵢᴸ⁻ ≥ 0, wᵢᵁ⁻ ≥ 0
+        @variable(model, wᴸ⁻[i=1:n] ≥ 0); @variable(model, wᵁ⁻[i=1:n] ≥ 0)
+        # wᵢᴸ⁺ ≥ 0, wᵢᵁ⁺ ≥ 0
+        @variable(model, wᴸ⁺[i=1:n] ≥ 0); @variable(model, wᵁ⁺[i=1:n] ≥ 0)
+        # εᵢᴸ ≥ 0, εᵢᵁ ≥ 0
+        @variable(model, εᴸ[i=1:n] ≥ 0); @variable(model, εᵁ[i=1:n] ≥ 0)
+
+        for i = 1:n
+            wᵢᴸ = wᴸ[i]; wᵢᵁ = wᵁ[i]
+            wᵢᴸ⁻ = wᴸ⁻[i]; wᵢᵁ⁻ = wᵁ⁻[i]; wᵢᴸ⁺ = wᴸ⁺[i]; wᵢᵁ⁺ = wᵁ⁺[i]
+            εᵢᴸ = εᴸ[i]; εᵢᵁ = εᵁ[i]
+
+            @constraint(model, wᵢᵁ ≥ wᵢᴸ)
+            @constraint(model, εᵢᴸ ≥ wᵢᴸ⁺ - wᵢᴸ⁻)
+            @constraint(model, εᵢᵁ ≥ wᵢᵁ⁻ - wᵢᵁ⁺)
+
+            # 正規性条件
+            ∑wⱼᴸ = sum(map(j -> wᴸ[j], filter(j -> i != j, 1:n)))
+            @constraint(model, ∑wⱼᴸ + wᵢᵁ ≤ 1)
+            ∑wⱼᵁ = sum(map(j -> wᵁ[j], filter(j -> i != j, 1:n)))
+            @constraint(model, ∑wⱼᵁ + wᵢᴸ ≥ 1)
+
+            for j = 1:n
+                if i == j continue end
+
+                aᵢⱼᴸ⁺ = A[i,j][2].lo; aᵢⱼᵁ⁺ = A[i,j][2].hi
+                wⱼᴸ = wᴸ[j]; wⱼᵁ = wᵁ[j]
+
+                @constraint(model, aᵢⱼᴸ⁺ * wⱼᵁ - εᵢᴸ ≤ wᵢᴸ)
+                @constraint(model, wᵢᵁ ≤ aᵢⱼᵁ⁺ * wⱼᴸ + εᵢᵁ)
+                @constraint(model, wᵢᴸ⁺ ≥ aᵢⱼᴸ⁺ * wⱼᵁ)
+                @constraint(model, wᵢᵁ⁺ ≤ aᵢⱼᵁ⁺ * wⱼᴸ)
+
+                if iscommon(A[i,j][1])
+                    aᵢⱼᴸ⁻ = A[i,j][1].lo; aᵢⱼᵁ⁻ = A[i,j][1].hi
+                    @constraint(model, wᵢᴸ ≤ aᵢⱼᴸ⁻ * wⱼᵁ + εᵢᴸ)
+                    @constraint(model, aᵢⱼᵁ⁻ * wⱼᴸ - εᵢᵁ ≤ wᵢᵁ)
+                    @constraint(model, wᵢᴸ⁻ ≤ aᵢⱼᴸ⁻ * wⱼᵁ)
+                    @constraint(model, wᵢᵁ⁻ ≥ aᵢⱼᵁ⁻ * wⱼᴸ)
+                end
+            end
+        end
+        @constraint(model, sum(wᴸ) + sum(wᵁ) == 2) # 中心総和 = 1
+
+        # 目的関数 ∑(εᵢᴸ + εᵢᵁ)
+        @objective(model, Min, sum(Ŵᴸ' * εᴸ) + sum(Ŵᵁ' * εᵁ))
+
+        optimize!(model)
+
+        optimalValue = sum(value.(Ŵᴸ' * εᴸ)) + sum(value.(Ŵᵁ' * εᵁ))
+
+        return (
+            # precision error の補正
+            # wᵢᴸ と wᵢᵁ が十分に近い値ならば wᵢᴸ <- wᵢᵁ
+            wᴸ=map(i -> correctPrecisionLoss(value(wᴸ[i]), value(wᵁ[i])), 1:n),
+            wᵁ=value.(wᵁ),
+            # precision error の補正
+            # wᵢᴸ⁻ と wᵢᵁ⁻ が十分に近い値ならば wᵢᴸ⁻ <- wᵢᵁ⁻
+            wᴸ⁻=map(i -> correctPrecisionLoss(value(wᴸ⁻[i]), value(wᵁ⁻[i])), 1:n),
+            wᵁ⁻=value.(wᵁ⁻),
+            wᴸ⁺=value.(wᴸ⁺), wᵁ⁺=value.(wᵁ⁺),
+            εᴸ=value.(εᴸ), εᵁ=value.(εᵁ),
+            optimalValue=optimalValue
+        )
+    finally
+        # エラー終了時にも変数などを消去する
+        empty!(model)
+    end
+end
+
+function updatePCM_m4(
+        A::Matrix{TwofoldInterval{T}},
+        result::CancellingLPResult_m4{T}
+        )::Matrix{TwofoldInterval{T}} where {T <: Real}
+    if !isTwofoldIntervalPCM(A)
+        throw(ArgumentError("Given matrix is not valid as twofold interval matrix."))
+    end
+
+    m, n = size(A)
+    Â = deepcopy(A)
+
+    wᴸ = result.wᴸ; wᵁ = result.wᵁ
+    wᴸ⁻ = result.wᴸ⁻; wᵁ⁻ = result.wᵁ⁻
+    wᴸ⁺ = result.wᴸ⁺; wᵁ⁺ = result.wᵁ⁺
+
+    for i = 1:n, j = 1:n
+        # 対角成分は (1..1, 1..1) で固定なので更新不要
+        if i == j continue end
+
+        aᵢⱼᴸ⁺ = A[i,j][2].lo; aᵢⱼᵁ⁺ = A[i,j][2].hi
+        wᵢᴸ = wᴸ[i]; wᵢᵁ = wᵁ[i]
+        wᵢᴸ⁻ = wᴸ⁻[i]; wᵢᵁ⁻ = wᵁ⁻[i]; wᵢᴸ⁺ = wᴸ⁺[i]; wᵢᵁ⁺ = wᵁ⁺[i]
+        wⱼᴸ = wᴸ[j]; wⱼᵁ = wᵁ[j]
+        wⱼᴸ⁻ = wᴸ⁻[j]; wⱼᵁ⁻ = wᵁ⁻[j]; wⱼᴸ⁺ = wᴸ⁺[j]; wⱼᵁ⁺ = wᵁ⁺[j]
+
+        # 整合化の前から空集合の場合
+        if !iscommon(A[i,j][1])
+            âᵢⱼᴸ⁺ = min(aᵢⱼᴸ⁺, wᵢᴸ⁻/wⱼᵁ, wᵢᴸ/wⱼᵁ⁻)
+            âᵢⱼᵁ⁺ = max(aᵢⱼᵁ⁺, wᵢᵁ⁻/wⱼᴸ, wᵢᵁ/wⱼᴸ⁻)
+            âᵢⱼᴸ⁺ = correctPrecisionLoss(âᵢⱼᴸ⁺, âᵢⱼᵁ⁺)
+            Â[i, j] = (emptyinterval(), âᵢⱼᴸ⁺..âᵢⱼᵁ⁺)
+            continue
+        end
+
+        aᵢⱼᴸ⁻ = A[i,j][1].lo; aᵢⱼᵁ⁻ = A[i,j][1].hi
+
+        âᵢⱼᴸ⁺ = min(aᵢⱼᴸ⁺, wᵢᴸ⁻/wⱼᵁ, wᵢᴸ/wⱼᵁ⁻)
+        âᵢⱼᴸ⁻ = max(aᵢⱼᴸ⁻, wᵢᴸ⁺/wⱼᵁ, wᵢᴸ/wⱼᵁ⁺)
+        âᵢⱼᵁ⁻ = min(aᵢⱼᵁ⁻, wᵢᵁ⁺/wⱼᴸ, wᵢᵁ/wⱼᴸ⁺)
+        âᵢⱼᵁ⁺ = max(aᵢⱼᵁ⁺, wᵢᵁ⁻/wⱼᴸ, wᵢᵁ/wⱼᴸ⁻)
+
+        âᵢⱼᴸ⁻ = correctPrecisionLoss(âᵢⱼᴸ⁻, âᵢⱼᴸ⁺)
+        âᵢⱼᵁ⁻ = correctPrecisionLoss(âᵢⱼᵁ⁻, âᵢⱼᴸ⁻)
+        âᵢⱼᵁ⁺ = correctPrecisionLoss(âᵢⱼᵁ⁺, âᵢⱼᵁ⁻)
+        âᵢⱼᴸ⁺ = correctPrecisionLoss(âᵢⱼᴸ⁺, âᵢⱼᵁ⁺)
+
+        # (Âᵢⱼ⁻, Âᵢⱼ⁺)
+        if âᵢⱼᴸ⁻ > âᵢⱼᵁ⁻
+            Â[i, j] = (emptyinterval(), âᵢⱼᴸ⁺..âᵢⱼᵁ⁺)
+        else
+            Â[i, j] = (âᵢⱼᴸ⁻..âᵢⱼᵁ⁻, âᵢⱼᴸ⁺..âᵢⱼᵁ⁺)
+        end
+    end
+
+    return Â
+end
